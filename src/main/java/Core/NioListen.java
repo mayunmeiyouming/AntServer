@@ -14,17 +14,16 @@ public class NioListen implements Runnable {
 
     private static Selector selector;
     private static HashMap<SocketChannel, ByteBuffer> map = new HashMap<>();
-    private ExecutorService service;
-
-    //事件处理
-    //private ServerEventHandler handler = new ServerEventHandler();
+    private ArrayBlockingQueue<SelectionKey> queue;
 
     public NioListen(Selector selector) {
         NioListen.selector = selector;
         int nThreads = Runtime.getRuntime().availableProcessors();
-        service = new ThreadPoolExecutor(nThreads, nThreads * 2,
-                60, TimeUnit.SECONDS, new ArrayBlockingQueue(64));
-
+        queue = new ArrayBlockingQueue(256);
+        for (int i = 0 ; i < nThreads * 2 ; i ++) {
+            Runnable r = new ServerReadEventHandleThread(queue);
+            new Thread(r).start();
+        }
     }
 
     //监听器
@@ -36,7 +35,6 @@ public class NioListen implements Runnable {
 
                 while (it.hasNext()) {
                     SelectionKey key = (SelectionKey) it.next();
-                    //System.out.println(key);
                     handleKey(key);
                     it.remove();//确保不重复处理
                 }
@@ -47,26 +45,33 @@ public class NioListen implements Runnable {
     }
 
     //处理方法
-    private void handleKey(SelectionKey key)
-            throws IOException {
-        SocketChannel channel = null;
+    private void handleKey(SelectionKey key) {
 
         try {
             if (key.isAcceptable()) {
-                channel = ServerEventHandler.acceptableHanler(selector, key);
+                acceptableHanler(key);
             } else if (key.isReadable()) {
-                ServerEventHandler handler = new ServerEventHandler(key);
-                service.submit(handler);
+                queue.put(key);
             } else if (!key.isValid()) {
-                channel = (SocketChannel) key.channel();
                 System.out.println("channel被终止");
-                channel.close();
             }
         } catch (Exception e) {
             key.cancel();
         }
+    }
 
-
+    public boolean acceptableHanler(SelectionKey clientKey) throws IOException {
+        try {
+            ServerSocketChannel serverSocketChannel = (ServerSocketChannel) clientKey.channel();
+            SocketChannel socketChannel = serverSocketChannel.accept();
+            socketChannel.configureBlocking(false);
+            System.out.println("客户端连接: " + socketChannel.getRemoteAddress());
+            socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public void run() {

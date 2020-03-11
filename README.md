@@ -3,8 +3,7 @@
 目前完成功能：
 
 + java nio监听事件
-+ 多线程处理响应
-+ http请求解析
-+ http响应
-+ 常见mime类型
++ http GET请求解析
++ 多线程处理http响应
++ 支持常见mime类型
 

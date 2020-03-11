@@ -11,39 +11,47 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ArrayBlockingQueue;
 
-public class ServerEventHandler implements Runnable {
+public class ServerReadEventHandleThread implements Runnable {
+
+    private ArrayBlockingQueue<SelectionKey> queue;
 
     //编码器初始化
     private static CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
     private static CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
 
-    private SelectionKey key;
-
-    public ServerEventHandler(SelectionKey key) {
-        this.key = key;
+    public ServerReadEventHandleThread(ArrayBlockingQueue<SelectionKey> queue) {
+        this.queue = queue;
     }
 
-    public static SocketChannel acceptableHanler(Selector selector, SelectionKey clinetKey) throws IOException {
-        ServerSocketChannel serverSocketChannel = (ServerSocketChannel) clinetKey.channel();
-        SocketChannel socketChannel = serverSocketChannel.accept();
-        socketChannel.configureBlocking(false);
-        System.out.println("客户端连接: " + socketChannel.getRemoteAddress());
-        socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-        return socketChannel;
+    @Override
+    public void run() {
+        while (true) {
+            try {
+                SelectionKey key = queue.take();
+                if (key.isValid() && key.isReadable()) {
+                    synchronized (key) {
+                        if (key.isValid() && key.isReadable())
+                            readHandler(key);
+                    }
+                }
+
+            } catch (InterruptedException | IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
-    public boolean readHandler() throws IOException {
+    private boolean readHandler(SelectionKey key) throws IOException {
         boolean res = true;
-
-        if (!key.isValid())
+        if (!key.isValid() || !key.isReadable())
             return false;
+
         SocketChannel socketChannel = (SocketChannel) key.channel();
         ByteBuffer readBuffer = ByteBuffer.allocate(5500);
         readBuffer.clear();
@@ -72,14 +80,6 @@ public class ServerEventHandler implements Runnable {
             //key.cancel();
             //key.selector().wakeup();
         }
-
-
-        return res;
-    }
-
-    public boolean writeHandler() {
-        boolean res = true;
-
         return res;
     }
 
@@ -95,23 +95,11 @@ public class ServerEventHandler implements Runnable {
 
         String contentType = "";
         int index = resource.indexOf('.');
-        if (index == - 1)
+        if (index == -1)
             contentType = "text/html";
         else {
             contentType = MimeTypes.getContentType(resource.substring(index));
         }
-        //System.out.println(request.getResource() + ": " + contentType);
-        /*if ((resource.equals("") || resource.endsWith(".html") || resource.endsWith(".htm")) && method.equals("GET")) {
-            contentType = "text/html";
-        } else if (resource.endsWith(".js") && method.equals("GET")) {
-            contentType = "application/javascript";
-        } else if (resource.endsWith(".css") && method.equals("GET")) {
-            contentType = "text/css";
-        } else if (resource.endsWith(".ico") && method.equals("GET")) {
-            contentType = "image/ico";
-        } else if (resource.endsWith(".jpg") && method.equals("GET")) {
-            contentType = "image/jpeg";
-        }*/
 
         HttpResponse response = new HttpResponse(key);
         response.setContentType(contentType);
@@ -119,15 +107,4 @@ public class ServerEventHandler implements Runnable {
         return res;
     }
 
-    @Override
-    public void run() {
-        synchronized (key) {
-            try {
-                readHandler();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-    }
 }

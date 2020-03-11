@@ -1,16 +1,16 @@
 package Http;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,7 +24,7 @@ public class HttpResponse extends HttpResponsePackage {
     private String head = "HTTP/1.1 200 OK" + NEWLINE;
 
     private CharBuffer headerBuffer = CharBuffer.allocate(1024);
-    private static CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+    private static CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
 
     public HttpResponse(SelectionKey key) {
         this.key = key;
@@ -61,8 +61,8 @@ public class HttpResponse extends HttpResponsePackage {
     public void commitResponseHeader() throws IOException {
         headerBuffer.clear();
         headerBuffer.put(head);
-        Set<Map.Entry<String,String>> entries = getEntries();
-        for (Map.Entry<String, String> entry: entries) {
+        Set<Map.Entry<String, String>> entries = getEntries();
+        for (Map.Entry<String, String> entry : entries) {
             appendHeaderValue(entry.getKey(), entry.getValue());
         }
         headerBuffer.put(NEWLINE);
@@ -78,7 +78,7 @@ public class HttpResponse extends HttpResponsePackage {
     }
 
     public void sendError(int i, String msg)
-            throws CharacterCodingException, IOException {
+            throws IOException {
         System.out.println("not modified");
         headerBuffer.clear();
         headerBuffer.put("HTTP/1.1 " + i + " " + msg);
