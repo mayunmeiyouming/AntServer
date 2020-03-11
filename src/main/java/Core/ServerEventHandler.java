@@ -3,9 +3,11 @@ package Core;
 import Http.HttpRequest;
 import Http.HttpRequestParser;
 import Http.HttpResponse;
-import sun.reflect.annotation.ExceptionProxy;
+import Http.MimeTypes;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
@@ -81,10 +83,10 @@ public class ServerEventHandler implements Runnable {
         return res;
     }
 
-    private boolean response(HttpRequest requestPackage, SelectionKey key) throws IOException {
+    private boolean response(HttpRequest request, SelectionKey key) throws IOException {
         boolean res = false;
-        String method = requestPackage.getMethod();
-        String resource = requestPackage.getResource();
+        String method = request.getMethod();
+        String resource = request.getResource();
         String filename = "WebContent/";
         if ("".equals(resource))
             filename += "index.html";
@@ -92,7 +94,14 @@ public class ServerEventHandler implements Runnable {
             filename += resource;
 
         String contentType = "";
-        if ((resource.equals("") || resource.endsWith(".html") || resource.endsWith(".htm")) && method.equals("GET")) {
+        int index = resource.indexOf('.');
+        if (index == - 1)
+            contentType = "text/html";
+        else {
+            contentType = MimeTypes.getContentType(resource.substring(index));
+        }
+        //System.out.println(request.getResource() + ": " + contentType);
+        /*if ((resource.equals("") || resource.endsWith(".html") || resource.endsWith(".htm")) && method.equals("GET")) {
             contentType = "text/html";
         } else if (resource.endsWith(".js") && method.equals("GET")) {
             contentType = "application/javascript";
@@ -102,7 +111,7 @@ public class ServerEventHandler implements Runnable {
             contentType = "image/ico";
         } else if (resource.endsWith(".jpg") && method.equals("GET")) {
             contentType = "image/jpeg";
-        }
+        }*/
 
         HttpResponse response = new HttpResponse(key);
         response.setContentType(contentType);
