@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
@@ -61,7 +62,8 @@ public class ServerReadEventHandleThread implements Runnable {
             if (count > 0) {
                 readBuffer.flip();
                 key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-                CharBuffer charBuffer = decoder.decode(readBuffer);
+                Charset charset = Charset.forName("UTF-8");
+                CharBuffer charBuffer = charset.decode(readBuffer);
                 String request = charBuffer.toString();
                 InputStream is = new ByteArrayInputStream(request.getBytes());
                 HttpRequestParser parser = new HttpRequestParser(is);

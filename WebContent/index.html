@@ -8,10 +8,14 @@
 <body>
 <p>
     Hello, WebServer!
-    <img src="0001.jpg">
-    <img src="Test/0002.jpg/?hw=5">
-    <img src="0005.jpg">
+    <img src="0005.jpg/?hw=5">
 </p>
+<form method="post" action="hw" enctype="multipart/form-data">
+    <input type="text" name="text">
+    <input type="number" name="number">
+    <input type="file" name="file">
+    <input type="submit">
+</form>
 
 </body>
 </html>

@@ -21,6 +21,33 @@ public class HttpRequest {
     private String AcceptLanguage;
     private String Referer;
     private String UpgradeInsecureRequests;
+    private String ContentLength;
+    private String Origin;
+    private String ContentType;
+
+    public String getOrigin() {
+        return Origin;
+    }
+
+    public void setOrigin(String origin) {
+        Origin = origin;
+    }
+
+    public String getContentType() {
+        return ContentType;
+    }
+
+    public void setContentType(String contentType) {
+        ContentType = contentType;
+    }
+
+    public String getContentLength() {
+        return ContentLength;
+    }
+
+    public void setContentLength(String contentLength) {
+        ContentLength = contentLength;
+    }
 
     public HttpRequest() {
         map = new HashMap<>();
