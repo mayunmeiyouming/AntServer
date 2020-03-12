@@ -25,6 +25,16 @@ public class HttpRequest {
     private String Origin;
     private String ContentType;
 
+    private MultipartContent multipartContent;
+
+    public MultipartContent getMultipartContent() {
+        return multipartContent;
+    }
+
+    public void setMultipartContent(MultipartContent multipartContent) {
+        this.multipartContent = multipartContent;
+    }
+
     public String getOrigin() {
         return Origin;
     }

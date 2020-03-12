@@ -53,35 +53,14 @@ public class ServerReadEventHandleThread implements Runnable {
         if (!key.isValid() || !key.isReadable())
             return false;
 
-        SocketChannel socketChannel = (SocketChannel) key.channel();
-        ByteBuffer readBuffer = ByteBuffer.allocate(5500);
-        readBuffer.clear();
-        try {
-            int count = socketChannel.read(readBuffer);
+        HttpRequestParser parser = new HttpRequestParser(key);
+        //Http请求包
+        HttpRequest requestPackage = parser.parser();
 
-            if (count > 0) {
-                readBuffer.flip();
-                key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-                Charset charset = Charset.forName("UTF-8");
-                CharBuffer charBuffer = charset.decode(readBuffer);
-                String request = charBuffer.toString();
-                InputStream is = new ByteArrayInputStream(request.getBytes());
-                HttpRequestParser parser = new HttpRequestParser(is);
+        res = response(requestPackage, key);
 
-                //Http请求包
-                HttpRequest requestPackage = parser.parser();
+        key.channel().close();
 
-                res = response(requestPackage, key);
-                //socketChannel.close();
-            } else {
-                System.out.println("读取时channel关闭");
-                socketChannel.close();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            //key.cancel();
-            //key.selector().wakeup();
-        }
         return res;
     }
 
@@ -96,7 +75,9 @@ public class ServerReadEventHandleThread implements Runnable {
             filename += resource;
 
         String contentType = "";
-        int index = resource.indexOf('.');
+        int index = -1;
+        if (!"".equals(resource))
+            index = resource.indexOf('.');
         if (index == -1)
             contentType = "text/html";
         else {
