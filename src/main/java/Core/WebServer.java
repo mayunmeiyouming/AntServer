@@ -49,6 +49,7 @@ public class WebServer {
     private static void usage() {
         System.out.println("This is Ant Server, Welcome to use it.");
         System.out.println("Ant Server 默认监听80端口.");
+        System.out.println();
     }
 
     /**
