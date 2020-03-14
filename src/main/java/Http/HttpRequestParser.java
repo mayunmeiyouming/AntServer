@@ -12,18 +12,18 @@ import java.util.StringTokenizer;
 
 public class HttpRequestParser {
     private SelectionKey key;
-    private InputStream inputStream;
     private HttpRequest request;
 
     // 解析请求的数据区需要的变量
     private String boundary = null;
     private String boundaryEnd = null;
     private MultipartContent content = null;
-    private ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    private ByteArrayOutputStream os = null;
     private boolean isKey = true;
     private boolean isFile = false;
     private String mapKey = null;
     private FileContent fileContent = null;
+
 
     public HttpRequestParser(SelectionKey key) {
         this.key = key;
@@ -169,6 +169,7 @@ public class HttpRequestParser {
             if (boundary == null) {
                 request.setContentType("multipart/form-data");
                 content = new MultipartContent();
+                os = new ByteArrayOutputStream();
                 boundary = "--" + contentType.substring(contentType.indexOf("=") + 1);
                 boundaryEnd = boundary + "--";
             }
@@ -177,8 +178,16 @@ public class HttpRequestParser {
             while ((line = in.readLine()) != null) {
                 if (boundary.equals(line) || boundaryEnd.equals(line)) {
                     System.out.println(fileContent);
-                    content.setFile(fileContent);
-                    fileContent = null;
+                    if (isFile) {
+                        byte[] bytes = os.toByteArray();
+                        os.reset();
+                        InputStream input = new ByteArrayInputStream(bytes);
+                        fileContent.setInputStream(input);
+                        content.setFile(fileContent);
+                        fileContent = null;
+                    } else if (!isKey) {
+                        content.setParameter(mapKey, line);
+                    }
                     isKey = true;
                     isFile = false;
                     continue;
@@ -217,7 +226,7 @@ public class HttpRequestParser {
                         content.setParameter(mapKey, line);
                     }
                     else {
-
+                        os.write(line.getBytes());
                     }
                     System.out.println(line);
                 }
