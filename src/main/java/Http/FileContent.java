@@ -9,6 +9,13 @@ public class FileContent {
     private String contentType;
     private InputStream inputStream;
 
+    @Override
+    public String toString() {
+        return "name: " + name + "\n"
+                + "filename: " + filename + "\n"
+                + "contentType: " + contentType;
+    }
+
     public InputStream getInputStream() {
         return inputStream;
     }

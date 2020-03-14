@@ -7,12 +7,23 @@ import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class HttpRequestParser {
     private SelectionKey key;
     private InputStream inputStream;
     private HttpRequest request;
+
+    // 解析请求的数据区需要的变量
+    private String boundary = null;
+    private String boundaryEnd = null;
+    private MultipartContent content = null;
+    private ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    private boolean isKey = true;
+    private boolean isFile = false;
+    private String mapKey = null;
+    private FileContent fileContent = null;
 
     public HttpRequestParser(SelectionKey key) {
         this.key = key;
@@ -26,10 +37,6 @@ public class HttpRequestParser {
         boolean headEnd = false;
         String method = null;
         String line = null;
-        String boundary = null;
-        String boundaryEnd = null;
-        boolean isKey = true;
-        MultipartContent content = null;
 
         while (socketChannel.read(readBuffer) > 0) {
             readBuffer.flip();
@@ -85,45 +92,12 @@ public class HttpRequestParser {
 
             //解析请求数据
             if ("POST".equals(method) && Integer.valueOf(request.getContentLength()) != 0) {
-                String contentType = request.getContentType();
-                if (contentType.contains("multipart/form-data")) {
-                    if (boundary == null) {
-                        request.setContentType("multipart/form-data");
-                        content = new MultipartContent();
-                        boundary = "--" + contentType.substring(contentType.indexOf("=") + 1);
-                        boundaryEnd = boundary + "--";
-                    }
-
-                    System.out.println("请求包含文件");
-                    while ((line = in.readLine()) != null) {
-                        if (boundary.equals(line) || boundaryEnd.equals(line)) {
-                            isKey = true;
-                            continue;
-                        } else if ("".equals(line)) {
-                            isKey = false;
-                            continue;
-                        }
-
-                        if (isKey) {
-                            if (line.contains("Content-Disposition")) {
-                                System.out.println(line);
-                            } else if (line.contains("Content-Type")) {
-                                System.out.println(line);
-                            }
-                        } else {
-                            System.out.println(line);
-                        }
-                    }
-                } else {
-                    while ((line = in.readLine()) != null) {
-                        System.out.println("POST: " + line);
-                        parserParameter(line);
-                    }
-                }
+                parserContent(in);
             }
 
             readBuffer.clear();
         }
+        request.setMultipartContent(content);
         //System.out.println("文件类型: " + request.getContentType());
         return request;
     }
@@ -186,5 +160,73 @@ public class HttpRequestParser {
             System.out.println(title + "参数未被支持");
         }
         return true;
+    }
+
+    private void parserContent(BufferedReader in) throws IOException {
+        String line = null;
+        String contentType = request.getContentType();
+        if (contentType.contains("multipart/form-data")) {  //解析带文件的post请求
+            if (boundary == null) {
+                request.setContentType("multipart/form-data");
+                content = new MultipartContent();
+                boundary = "--" + contentType.substring(contentType.indexOf("=") + 1);
+                boundaryEnd = boundary + "--";
+            }
+
+            System.out.println("请求包含文件");
+            while ((line = in.readLine()) != null) {
+                if (boundary.equals(line) || boundaryEnd.equals(line)) {
+                    System.out.println(fileContent);
+                    content.setFile(fileContent);
+                    fileContent = null;
+                    isKey = true;
+                    isFile = false;
+                    continue;
+                } else if ("".equals(line)) {
+                    isKey = false;
+                    continue;
+                }
+
+                if (isKey) {
+                    if (line.contains("Content-Disposition")) {
+                        String[] strings = line.substring(line.indexOf("name")).split("; ");
+                        for (int i = 0 ; i < strings.length ; i ++) {
+                            String[] str = strings[i].split("=");
+                            if (strings.length == 1) {
+                                content.setParameter(str[1], null);
+                                mapKey = str[1];
+                            } else {
+                                if (fileContent == null)
+                                    fileContent = new FileContent();
+                                if ("name".equals(str[0]))
+                                    fileContent.setName(str[1].substring(1, str[1].length() - 1));
+                                else if ("filename".equals(str[0])) {
+                                    isFile = true;
+                                    fileContent.setFilename(str[1].substring(1, str[1].length() - 1));
+                                }
+                            }
+                        }
+                        System.out.println(line);
+                    } else if (line.contains("Content-Type")) {
+                        String[] strs = line.split(": ");
+                        fileContent.setContentType(strs[1]);
+                        System.out.println(line);
+                    }
+                } else {
+                    if (!isFile) {
+                        content.setParameter(mapKey, line);
+                    }
+                    else {
+
+                    }
+                    System.out.println(line);
+                }
+            }
+        } else {  //解析普通post请求
+            while ((line = in.readLine()) != null) {
+                System.out.println("POST: " + line);
+                parserParameter(line);
+            }
+        }
     }
 }
