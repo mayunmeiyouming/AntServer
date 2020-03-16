@@ -98,6 +98,7 @@ public class HttpRequestParser {
             readBuffer.clear();
         }
         request.setMultipartContent(content);
+        test(); //测试http请求解析
         //System.out.println("文件类型: " + request.getContentType());
         return request;
     }
@@ -227,6 +228,7 @@ public class HttpRequestParser {
                     }
                     else {
                         os.write(line.getBytes());
+                        os.write("\r\n".getBytes());
                     }
                     System.out.println(line);
                 }
@@ -237,5 +239,37 @@ public class HttpRequestParser {
                 parserParameter(line);
             }
         }
+    }
+
+    /*
+     * 测试http请求解析
+     */
+    private void test() throws IOException {
+        System.out.println("test begin");
+        System.out.println(request.getMultipartContent());
+        MultipartContent multipartContent = request.getMultipartContent();
+        if (multipartContent != null) {
+            FileContent fileContent1 = multipartContent.getFile("filehw");
+            if (fileContent1 != null) {
+                InputStream inputStream = fileContent1.getInputStream();
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                String line = null;
+                File file = new File("WebContent/" + fileContent1.getFilename());
+                OutputStream outputStream = new FileOutputStream(file);
+                OutputStreamWriter writer = new OutputStreamWriter(outputStream);
+                BufferedWriter bufferedWriter = new BufferedWriter(writer);
+                while ((line = bufferedReader.readLine()) != null) {
+                    System.out.println(line);
+                    bufferedWriter.write(line + "\r\n");
+                }
+                bufferedWriter.close();
+                writer.close();
+                outputStream.close();
+                bufferedReader.close();
+                inputStreamReader.close();
+            }
+        }
+        System.out.println("test end");
     }
 }
