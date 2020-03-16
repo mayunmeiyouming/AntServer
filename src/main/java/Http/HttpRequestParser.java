@@ -98,7 +98,7 @@ public class HttpRequestParser {
             readBuffer.clear();
         }
         request.setMultipartContent(content);
-        test(); //测试http请求解析
+        //test(); //测试http请求解析
         //System.out.println("文件类型: " + request.getContentType());
         return request;
     }
