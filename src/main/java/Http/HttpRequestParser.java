@@ -1,5 +1,7 @@
 package Http;
 
+import org.apache.commons.fileupload.FileUploadException;
+
 import java.io.*;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
@@ -7,7 +9,7 @@ import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
-import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
 import java.util.StringTokenizer;
 
 public class HttpRequestParser {
@@ -23,13 +25,14 @@ public class HttpRequestParser {
     private boolean isFile = false;
     private String mapKey = null;
     private FileContent fileContent = null;
+    private int h;
 
 
     public HttpRequestParser(SelectionKey key) {
         this.key = key;
     }
 
-    public HttpRequest parser() throws IOException {
+    public HttpRequest parser() throws IOException, FileUploadException {
         request = new HttpRequest();
         SocketChannel socketChannel = (SocketChannel) key.channel();
         ByteBuffer readBuffer = ByteBuffer.allocate(5500);
@@ -40,7 +43,8 @@ public class HttpRequestParser {
 
         while (socketChannel.read(readBuffer) > 0) {
             readBuffer.flip();
-            Charset charset = Charset.forName("UTF-8");
+            //ByteBuffer buffer = handleByteBuffer(readBuffer);
+            Charset charset = StandardCharsets.UTF_8;
             CharBuffer charBuffer = charset.decode(readBuffer);
             String data = charBuffer.toString();
             InputStream is = new ByteArrayInputStream(data.getBytes());
@@ -71,9 +75,8 @@ public class HttpRequestParser {
                     String str = url.substring(i + 2);
                     parserParameter(str);
                 }
-
-                String version = line.substring(line.lastIndexOf(' ') + 1);
-                request.setHttpVersion(version);
+                String protocol = line.substring(line.lastIndexOf(' ') + 1);
+                request.setProtocol(protocol);
 
                 // 读取所有浏览器发送过来的请求参数头部信息
                 while ((line = in.readLine()) != null) {
@@ -90,22 +93,30 @@ public class HttpRequestParser {
                 System.out.println("请求的类型是: " + method);
             }
 
-            //解析请求数据
-            if ("POST".equals(method) && Integer.valueOf(request.getContentLength()) != 0) {
+            if (request.isMultipartContent()) {
+                //解析请求数据
+                System.out.println("解析请求数据");
                 parserContent(in);
+            } else if (!request.isMultipartContent() && "POST".equals(request.getMethod())) {
+                //解析普通post请求
+                System.out.println("解析简单post");
+
+                line = in.readLine();
+                parserParameter(line);
+                System.out.println("完成解析post");
             }
 
-            readBuffer.clear();
+            readBuffer.compact();
         }
         request.setMultipartContent(content);
-        //test(); //测试http请求解析
+        test(); //测试http请求解析
         //System.out.println("文件类型: " + request.getContentType());
         return request;
     }
-    
+
     private boolean parserParameter(String line) {
         String[] strs = line.split("&");
-        for (int i = 0 ; i < strs.length ; i ++) {
+        for (int i = 0; i < strs.length; i++) {
             String str = strs[i];
             int pIndex = str.indexOf('=');
             if (pIndex == -1 || pIndex == 0)
@@ -114,6 +125,13 @@ public class HttpRequestParser {
             String value = "";
             if (pIndex != str.length() - 1)
                 value = str.substring(pIndex + 1);
+            try {
+                String k = URLDecoder.decode(value, "UTF-8");
+                value = k;
+            } catch (UnsupportedEncodingException e) {
+
+            }
+
             request.setParameter(key, value);
         }
         return true;
@@ -166,79 +184,95 @@ public class HttpRequestParser {
     private void parserContent(BufferedReader in) throws IOException {
         String line = null;
         String contentType = request.getContentType();
-        if (contentType.contains("multipart/form-data")) {  //解析带文件的post请求
-            if (boundary == null) {
-                request.setContentType("multipart/form-data");
-                content = new MultipartContent();
-                os = new ByteArrayOutputStream();
-                boundary = "--" + contentType.substring(contentType.indexOf("=") + 1);
-                boundaryEnd = boundary + "--";
+        if (boundary == null) {
+            request.setContentType("multipart/form-data");
+            content = new MultipartContent();
+            os = new ByteArrayOutputStream();
+            boundary = "--" + contentType.substring(contentType.indexOf("=") + 1);
+            boundaryEnd = boundary + "--";
+        }
+
+        System.out.println("请求包含文件");
+        while ((line = in.readLine()) != null) {
+            if (boundary.equals(line) || boundaryEnd.equals(line)) { //处理界限
+                System.out.println(fileContent);
+                if (isFile) {
+                    byte[] bytes = os.toByteArray();
+                    os.reset();
+                    InputStream input = new ByteArrayInputStream(bytes);
+                    fileContent.setInputStream(input);
+                    content.setFile(fileContent);
+                    fileContent = null;
+
+                } else if (!isKey) {
+                    content.setParameter(mapKey, line);
+                }
+                h = 1;
+                isKey = true;
+                isFile = false;
+                continue;
+            } else if ("".equals(line)) {
+                isKey = false;
+                continue;
             }
 
-            System.out.println("请求包含文件");
-            while ((line = in.readLine()) != null) {
-                if (boundary.equals(line) || boundaryEnd.equals(line)) {
-                    System.out.println(fileContent);
-                    if (isFile) {
-                        byte[] bytes = os.toByteArray();
-                        os.reset();
-                        InputStream input = new ByteArrayInputStream(bytes);
-                        fileContent.setInputStream(input);
-                        content.setFile(fileContent);
-                        fileContent = null;
-                    } else if (!isKey) {
-                        content.setParameter(mapKey, line);
-                    }
-                    isKey = true;
-                    isFile = false;
-                    continue;
-                } else if ("".equals(line)) {
-                    isKey = false;
-                    continue;
-                }
-
-                if (isKey) {
-                    if (line.contains("Content-Disposition")) {
-                        String[] strings = line.substring(line.indexOf("name")).split("; ");
-                        for (int i = 0 ; i < strings.length ; i ++) {
-                            String[] str = strings[i].split("=");
-                            if (strings.length == 1) {
-                                content.setParameter(str[1], null);
-                                mapKey = str[1];
-                            } else {
-                                if (fileContent == null)
-                                    fileContent = new FileContent();
-                                if ("name".equals(str[0]))
-                                    fileContent.setName(str[1].substring(1, str[1].length() - 1));
-                                else if ("filename".equals(str[0])) {
-                                    isFile = true;
-                                    fileContent.setFilename(str[1].substring(1, str[1].length() - 1));
-                                }
+            if (isKey) {  // 参数头
+                if (line.contains("Content-Disposition")) {
+                    String[] strings = line.substring(line.indexOf("name")).split("; ");
+                    for (int i = 0; i < strings.length; i++) {
+                        String[] str = strings[i].split("=");
+                        if (strings.length == 1) {
+                            content.setParameter(str[1], null);
+                            mapKey = str[1];
+                        } else {
+                            if (fileContent == null)
+                                fileContent = new FileContent();
+                            if ("name".equals(str[0]))
+                                fileContent.setName(str[1].substring(1, str[1].length() - 1));
+                            else if ("filename".equals(str[0])) {
+                                isFile = true;
+                                fileContent.setFilename(str[1].substring(1, str[1].length() - 1));
                             }
                         }
-                        System.out.println(line);
-                    } else if (line.contains("Content-Type")) {
-                        String[] strs = line.split(": ");
-                        fileContent.setContentType(strs[1]);
-                        System.out.println(line);
-                    }
-                } else {
-                    if (!isFile) {
-                        content.setParameter(mapKey, line);
-                    }
-                    else {
-                        os.write(line.getBytes());
-                        os.write("\r\n".getBytes());
                     }
                     System.out.println(line);
+                } else if (line.contains("Content-Type")) {
+                    String[] strs = line.split(": ");
+                    fileContent.setContentType(strs[1]);
+                    System.out.println(line);
                 }
-            }
-        } else {  //解析普通post请求
-            while ((line = in.readLine()) != null) {
-                System.out.println("POST: " + line);
-                parserParameter(line);
+            } else {  //参数值
+                if (!isFile) {
+                    content.setParameter(mapKey, line);
+                } else {
+                    if (h != 1)
+                        os.write('\n');
+                    os.write(line.getBytes());
+                    h++;
+                }
+                System.out.println(line);
             }
         }
+    }
+
+    private ByteBuffer handleByteBuffer(ByteBuffer byteBuffer) {
+        ByteBuffer buffer = ByteBuffer.allocate(byteBuffer.capacity());
+        StringBuilder builder = new StringBuilder();
+        while (byteBuffer.position() != byteBuffer.limit()) {
+            char c = byteBuffer.getChar();
+            System.out.println(c);
+            if (c != '\n')
+                builder.append(c);
+            else {
+                buffer.put(builder.toString().getBytes());
+                builder = new StringBuilder();
+            }
+        }
+        if (builder.length() != 0) {
+            byteBuffer.clear();
+            byteBuffer.put(builder.toString().getBytes());
+        }
+        return buffer;
     }
 
     /*
@@ -259,9 +293,13 @@ public class HttpRequestParser {
                 OutputStream outputStream = new FileOutputStream(file);
                 OutputStreamWriter writer = new OutputStreamWriter(outputStream);
                 BufferedWriter bufferedWriter = new BufferedWriter(writer);
+                int f = 1;
                 while ((line = bufferedReader.readLine()) != null) {
                     System.out.println(line);
-                    bufferedWriter.write(line + "\r\n");
+                    if (f != 1)
+                        bufferedWriter.write('\n');
+                    bufferedWriter.write(line);
+                    f++;
                 }
                 bufferedWriter.close();
                 writer.close();

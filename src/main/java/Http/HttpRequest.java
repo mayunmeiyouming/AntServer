@@ -1,12 +1,14 @@
 package Http;
 
+import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Locale;
 
 public class HttpRequest {
     private String resource;
-    private HashMap<String,String> map;
+    private HashMap<String, String> map;
+    private String protocol;
     private String method;
-    private String HttpVersion;
     private String Host;
     private String Connection;
     private String Pragma;
@@ -26,6 +28,27 @@ public class HttpRequest {
     private String ContentType;
 
     private MultipartContent multipartContent;
+
+    private InputStream inputStream;
+
+    public InputStream getInputStream() {
+        return inputStream;
+    }
+
+    public void setInputStream(InputStream inputStream) {
+        this.inputStream = inputStream;
+    }
+
+    public final boolean isMultipartContent() {
+        if (!"POST".equalsIgnoreCase(this.getMethod())) {
+            return false;
+        }
+        String contentType = this.getContentType();
+        if (contentType == null) {
+            return false;
+        }
+        return contentType.toLowerCase(Locale.ENGLISH).startsWith("multipart/");
+    }
 
     public MultipartContent getMultipartContent() {
         return multipartContent;
@@ -67,7 +90,7 @@ public class HttpRequest {
         return map.get(key);
     }
 
-    public void setParameter (String key, String value) {
+    public void setParameter(String key, String value) {
         map.put(key, value);
     }
 
@@ -87,12 +110,12 @@ public class HttpRequest {
         this.resource = resource;
     }
 
-    public String getHttpVersion() {
-        return HttpVersion;
+    public String getProtocol() {
+        return protocol;
     }
 
-    public void setHttpVersion(String httpVersion) {
-        HttpVersion = httpVersion;
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 
     public String getHost() {

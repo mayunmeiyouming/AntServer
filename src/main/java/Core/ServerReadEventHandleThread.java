@@ -4,15 +4,10 @@ import Http.HttpRequest;
 import Http.HttpRequestParser;
 import Http.HttpResponse;
 import Http.MimeTypes;
+import org.apache.commons.fileupload.FileUploadException;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
@@ -42,13 +37,13 @@ public class ServerReadEventHandleThread implements Runnable {
                     }
                 }
 
-            } catch (InterruptedException | IOException e) {
+            } catch (InterruptedException | IOException | FileUploadException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private boolean readHandler(SelectionKey key) throws IOException {
+    private boolean readHandler(SelectionKey key) throws IOException, FileUploadException {
         boolean res = true;
         if (!key.isValid() || !key.isReadable())
             return false;
