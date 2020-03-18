@@ -18,8 +18,6 @@ public class HttpRequestParser {
     private SelectionKey key;
     private HttpRequest request;
 
-    private Charset cs = StandardCharsets.UTF_8;
-
     // 解析请求的数据区需要的变量
     private String boundary = null;
     private String boundaryEnd = null;
@@ -35,9 +33,6 @@ public class HttpRequestParser {
     String method = null;
     String line = null;
 
-    int count = 0;
-
-
     public HttpRequestParser(SelectionKey key) {
         this.key = key;
     }
@@ -45,7 +40,7 @@ public class HttpRequestParser {
     public HttpRequest parser() throws IOException, FileUploadException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         request = new HttpRequest();
         SocketChannel socketChannel = (SocketChannel) key.channel();
-        ByteBuffer readBuffer = ByteBuffer.allocate(10240);
+        ByteBuffer readBuffer = ByteBuffer.allocate(102400);
         readBuffer.clear();
 
         while (socketChannel.read(readBuffer) > 0 || readBuffer.position() != 0) {
