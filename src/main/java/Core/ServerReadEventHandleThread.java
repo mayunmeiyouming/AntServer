@@ -7,6 +7,7 @@ import Http.MimeTypes;
 import org.apache.commons.fileupload.FileUploadException;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
@@ -39,11 +40,19 @@ public class ServerReadEventHandleThread implements Runnable {
 
             } catch (InterruptedException | IOException | FileUploadException e) {
                 e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
             }
         }
     }
 
-    private boolean readHandler(SelectionKey key) throws IOException, FileUploadException {
+    private boolean readHandler(SelectionKey key) throws IOException, FileUploadException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
         boolean res = true;
         if (!key.isValid() || !key.isReadable())
             return false;

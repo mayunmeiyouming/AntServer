@@ -3,6 +3,7 @@ package Http;
 import org.apache.commons.fileupload.FileUploadException;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -10,11 +11,14 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class HttpRequestParser {
     private SelectionKey key;
     private HttpRequest request;
+
+    private Charset cs = Charset.forName ("UTF-8");
 
     // 解析请求的数据区需要的变量
     private String boundary = null;
@@ -25,36 +29,69 @@ public class HttpRequestParser {
     private boolean isFile = false;
     private String mapKey = null;
     private FileContent fileContent = null;
-    private int h;
+
+    boolean headEnd = false;    //false代表头部没有被解析完成
+    boolean header = false;     //false代表请求行没有被解析完成
+    String method = null;
+    String line = null;
+
+    int count = 0;
 
 
     public HttpRequestParser(SelectionKey key) {
         this.key = key;
     }
 
-    public HttpRequest parser() throws IOException, FileUploadException {
+    public HttpRequest parser() throws IOException, FileUploadException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         request = new HttpRequest();
         SocketChannel socketChannel = (SocketChannel) key.channel();
-        ByteBuffer readBuffer = ByteBuffer.allocate(5500);
+        ByteBuffer readBuffer = ByteBuffer.allocate(10240);
         readBuffer.clear();
-        boolean headEnd = false;
-        String method = null;
-        String line = null;
 
         while (socketChannel.read(readBuffer) > 0) {
             readBuffer.flip();
-            //ByteBuffer buffer = handleByteBuffer(readBuffer);
-            Charset charset = StandardCharsets.UTF_8;
-            CharBuffer charBuffer = charset.decode(readBuffer);
-            String data = charBuffer.toString();
-            InputStream is = new ByteArrayInputStream(data.getBytes());
-            BufferedReader in = new BufferedReader(new InputStreamReader(is));
+            ByteBuffer buffer = handleByteBuffer(readBuffer);
+            ByteBuffer temp = ByteBuffer.allocate(buffer.limit());
+            while (buffer.position() != buffer.limit()) {
+                byte b = buffer.get();
+                temp.put(b);
+                if (b == 10 || (buffer.position() == buffer.limit() && buffer.limit() != buffer.capacity())) {
+                    handleStream(temp);
+                }
+            }
 
-            if (headEnd == false) {
-                System.out.println(Thread.currentThread().getName() + "解析请求头信息 begin: ***************");
-                // 读取第一行, 请求地址
-                line = in.readLine();
-                System.out.println(line);
+            readBuffer.compact();
+        }
+        request.setMultipartContent(content);
+        test(); //测试http请求解析
+        //System.out.println("文件类型: " + request.getContentType());
+        return request;
+    }
+
+    private void handleStream(ByteBuffer temp) throws IOException {
+        temp.flip();
+        byte[] bytes = temp.array();
+        int limit = temp.limit();
+        Charset charset = StandardCharsets.UTF_8;
+        CharBuffer charBuffer = charset.decode(temp);
+        String data = charBuffer.toString();
+        InputStream is = new ByteArrayInputStream(data.getBytes());
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+        if (headEnd == false) {
+            //System.out.println(Thread.currentThread().getName() + "解析请求头信息 begin: ***************");
+
+            line = in.readLine();
+            if ("".equals(line)) {  //请求头解析完成
+                System.out.println("用户请求的资源是: " + request.getResource());
+                System.out.println("请求的类型是: " + request.getMethod());
+                System.out.println("ContentType: " + request.getContentType());
+                System.out.println("请求头解析完成");
+                headEnd = true;
+                temp.clear();
+                return;
+            }
+            if (header == false) {   //解析请求行
+                System.out.println("header: " + line);
                 // 获取请求方法, GET 或者 POST
                 method = new StringTokenizer(line).nextElement().toString();
                 request.setMethod(method);
@@ -77,41 +114,30 @@ public class HttpRequestParser {
                 }
                 String protocol = line.substring(line.lastIndexOf(' ') + 1);
                 request.setProtocol(protocol);
-
+                header = true;
+            } else {
                 // 读取所有浏览器发送过来的请求参数头部信息
-                while ((line = in.readLine()) != null) {
-                    if ("".equals(line)) {    //请求头解析完成
-                        headEnd = true;
-                        break;
-                    }
-
-                    parserRequestHeader(line);
-                }
-
-                System.out.println(Thread.currentThread().getName() + "解析请求头信息 end: ***************");
-                System.out.println("用户请求的资源是: " + resource);
-                System.out.println("请求的类型是: " + method);
+                parserRequestHeader(line);
             }
 
-            if (request.isMultipartContent()) {
-                //解析请求数据
-                System.out.println("解析请求数据");
-                parserContent(in);
-            } else if (!request.isMultipartContent() && "POST".equals(request.getMethod())) {
-                //解析普通post请求
-                System.out.println("解析简单post");
+            //System.out.println(Thread.currentThread().getName() + "解析请求头信息 end: ***************");
 
-                line = in.readLine();
-                parserParameter(line);
-                System.out.println("完成解析post");
-            }
-
-            readBuffer.compact();
         }
-        request.setMultipartContent(content);
-        test(); //测试http请求解析
-        //System.out.println("文件类型: " + request.getContentType());
-        return request;
+
+        if (headEnd && request.isMultipartContent()) {
+            //解析请求数据
+            System.out.println("解析请求数据");
+            parserContent(bytes, in, limit);
+        } else if (headEnd && !request.isMultipartContent() && "POST".equals(request.getMethod())) {
+            //解析普通post请求
+            System.out.println("解析简单post");
+
+            line = in.readLine();
+            parserParameter(line);
+            System.out.println("完成解析post");
+        }
+
+        temp.clear();
     }
 
     private boolean parserParameter(String line) {
@@ -131,7 +157,7 @@ public class HttpRequestParser {
             } catch (UnsupportedEncodingException e) {
 
             }
-
+            System.out.println("参数: " + key + " " + value);
             request.setParameter(key, value);
         }
         return true;
@@ -141,6 +167,7 @@ public class HttpRequestParser {
         int index = line.indexOf(':');
         String title = line.substring(0, index);
         String value = line.substring(index + 2);
+        System.out.println("参数: " + line);
         if ("Host".equals(title)) {
             request.setHost(value);
         } else if ("Connection".equals(title)) {
@@ -181,7 +208,7 @@ public class HttpRequestParser {
         return true;
     }
 
-    private void parserContent(BufferedReader in) throws IOException {
+    private void parserContent(byte[] b, BufferedReader in, int limit) throws IOException {
         String line = null;
         String contentType = request.getContentType();
         if (boundary == null) {
@@ -192,22 +219,17 @@ public class HttpRequestParser {
             boundaryEnd = boundary + "--";
         }
 
-        System.out.println("请求包含文件");
+        //System.out.println("请求包含文件");
         while ((line = in.readLine()) != null) {
             if (boundary.equals(line) || boundaryEnd.equals(line)) { //处理界限
-                System.out.println(fileContent);
                 if (isFile) {
-                    byte[] bytes = os.toByteArray();
+                    InputStream input = new ByteArrayInputStream(os.toByteArray());
                     os.reset();
-                    InputStream input = new ByteArrayInputStream(bytes);
                     fileContent.setInputStream(input);
                     content.setFile(fileContent);
                     fileContent = null;
 
-                } else if (!isKey) {
-                    content.setParameter(mapKey, line);
                 }
-                h = 1;
                 isKey = true;
                 isFile = false;
                 continue;
@@ -216,7 +238,7 @@ public class HttpRequestParser {
                 continue;
             }
 
-            if (isKey) {  // 参数头
+            if (isKey) {    // 参数头
                 if (line.contains("Content-Disposition")) {
                     String[] strings = line.substring(line.indexOf("name")).split("; ");
                     for (int i = 0; i < strings.length; i++) {
@@ -241,37 +263,47 @@ public class HttpRequestParser {
                     fileContent.setContentType(strs[1]);
                     System.out.println(line);
                 }
+
             } else {  //参数值
                 if (!isFile) {
                     content.setParameter(mapKey, line);
                 } else {
-                    if (h != 1)
-                        os.write('\n');
-                    os.write(line.getBytes());
-                    h++;
+                    os.write(b, 0, limit);
                 }
-                System.out.println(line);
+                //System.out.println(line);
             }
         }
     }
 
     private ByteBuffer handleByteBuffer(ByteBuffer byteBuffer) {
-        ByteBuffer buffer = ByteBuffer.allocate(byteBuffer.capacity());
-        StringBuilder builder = new StringBuilder();
+        ByteBuffer buffer = ByteBuffer.allocate(byteBuffer.limit());
+        ByteBuffer temp = ByteBuffer.allocate(byteBuffer.limit());
+
         while (byteBuffer.position() != byteBuffer.limit()) {
-            char c = byteBuffer.getChar();
-            System.out.println(c);
-            if (c != '\n')
-                builder.append(c);
-            else {
-                buffer.put(builder.toString().getBytes());
-                builder = new StringBuilder();
+            byte b = byteBuffer.get();
+            temp.put(b);
+            if (b == 10) {
+                temp.flip();
+                buffer.put(temp);
+                temp.clear();
             }
         }
-        if (builder.length() != 0) {
-            byteBuffer.clear();
-            byteBuffer.put(builder.toString().getBytes());
+        if (temp.limit() != 0) {
+            if (byteBuffer.capacity() != byteBuffer.limit()) {
+                System.out.println("最后一行");
+                temp.flip();
+                buffer.put(temp);
+                temp.clear();
+            } else {
+                System.out.println("数据下移");
+                byteBuffer.clear();
+                byteBuffer.put(temp);
+                System.out.println("数据位置: " + byteBuffer.position());
+                System.out.println("数据limit: " + byteBuffer.limit());
+            }
         }
+        temp = null;
+        buffer.flip();
         return buffer;
     }
 
@@ -286,26 +318,16 @@ public class HttpRequestParser {
             FileContent fileContent1 = multipartContent.getFile("filehw");
             if (fileContent1 != null) {
                 InputStream inputStream = fileContent1.getInputStream();
-                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
                 String line = null;
                 File file = new File("WebContent/" + fileContent1.getFilename());
                 OutputStream outputStream = new FileOutputStream(file);
-                OutputStreamWriter writer = new OutputStreamWriter(outputStream);
-                BufferedWriter bufferedWriter = new BufferedWriter(writer);
-                int f = 1;
-                while ((line = bufferedReader.readLine()) != null) {
-                    System.out.println(line);
-                    if (f != 1)
-                        bufferedWriter.write('\n');
-                    bufferedWriter.write(line);
-                    f++;
+                byte[] bytes2 = new byte[1024];
+                int len = 0;
+                while ((len = inputStream.read(bytes2)) > 0) {
+                    outputStream.write(bytes2, 0, len);
                 }
-                bufferedWriter.close();
-                writer.close();
                 outputStream.close();
-                bufferedReader.close();
-                inputStreamReader.close();
+                //inputStream.close();
             }
         }
         System.out.println("test end");
