@@ -18,7 +18,7 @@ public class HttpRequestParser {
     private SelectionKey key;
     private HttpRequest request;
 
-    private Charset cs = Charset.forName ("UTF-8");
+    private Charset cs = StandardCharsets.UTF_8;
 
     // 解析请求的数据区需要的变量
     private String boundary = null;
@@ -48,19 +48,20 @@ public class HttpRequestParser {
         ByteBuffer readBuffer = ByteBuffer.allocate(10240);
         readBuffer.clear();
 
-        while (socketChannel.read(readBuffer) > 0) {
+        while (socketChannel.read(readBuffer) > 0 || readBuffer.position() != 0) {
             readBuffer.flip();
             ByteBuffer buffer = handleByteBuffer(readBuffer);
             ByteBuffer temp = ByteBuffer.allocate(buffer.limit());
             while (buffer.position() != buffer.limit()) {
                 byte b = buffer.get();
                 temp.put(b);
-                if (b == 10 || (buffer.position() == buffer.limit() && buffer.limit() != buffer.capacity())) {
+                if (b == 10) {
                     handleStream(temp);
                 }
             }
-
-            readBuffer.compact();
+            if (temp.position() != 0) {
+                handleStream(temp);
+            }
         }
         request.setMultipartContent(content);
         test(); //测试http请求解析
@@ -126,7 +127,7 @@ public class HttpRequestParser {
 
         if (headEnd && request.isMultipartContent()) {
             //解析请求数据
-            System.out.println("解析请求数据");
+            //System.out.println("解析请求数据");
             parserContent(bytes, in, limit);
         } else if (headEnd && !request.isMultipartContent() && "POST".equals(request.getMethod())) {
             //解析普通post请求
@@ -220,10 +221,23 @@ public class HttpRequestParser {
         }
 
         //System.out.println("请求包含文件");
-        while ((line = in.readLine()) != null) {
+        line = in.readLine();
+        if (b.length == 2) {
+            System.out.println("空字符");
+        }
+        if (line == null && b.length != 0) {
+
+            if (!isKey && isFile) {
+                os.write(b, 0, limit);
+            }
+            return;
+        }
+        if (line != null) {
             if (boundary.equals(line) || boundaryEnd.equals(line)) { //处理界限
                 if (isFile) {
-                    InputStream input = new ByteArrayInputStream(os.toByteArray());
+                    byte[] bytes = os.toByteArray();
+                    bytes = Arrays.copyOfRange(bytes, 0, bytes.length - 2);
+                    InputStream input = new ByteArrayInputStream(bytes);
                     os.reset();
                     fileContent.setInputStream(input);
                     content.setFile(fileContent);
@@ -232,10 +246,10 @@ public class HttpRequestParser {
                 }
                 isKey = true;
                 isFile = false;
-                continue;
-            } else if ("".equals(line)) {
+                return;
+            } else if ("".equals(line) && isKey) {
                 isKey = false;
-                continue;
+                return;
             }
 
             if (isKey) {    // 参数头
@@ -278,6 +292,8 @@ public class HttpRequestParser {
     private ByteBuffer handleByteBuffer(ByteBuffer byteBuffer) {
         ByteBuffer buffer = ByteBuffer.allocate(byteBuffer.limit());
         ByteBuffer temp = ByteBuffer.allocate(byteBuffer.limit());
+        buffer.clear();
+        temp.clear();
 
         while (byteBuffer.position() != byteBuffer.limit()) {
             byte b = byteBuffer.get();
@@ -288,19 +304,23 @@ public class HttpRequestParser {
                 temp.clear();
             }
         }
-        if (temp.limit() != 0) {
+        if (temp.position() != 0) {
+            temp.flip();
             if (byteBuffer.capacity() != byteBuffer.limit()) {
                 System.out.println("最后一行");
-                temp.flip();
                 buffer.put(temp);
-                temp.clear();
+                byteBuffer.clear();
             } else {
                 System.out.println("数据下移");
                 byteBuffer.clear();
                 byteBuffer.put(temp);
+                System.out.println("temp的位置: " + temp.position());
                 System.out.println("数据位置: " + byteBuffer.position());
                 System.out.println("数据limit: " + byteBuffer.limit());
             }
+            temp.clear();
+        } else {
+            byteBuffer.clear();
         }
         temp = null;
         buffer.flip();
