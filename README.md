@@ -11,6 +11,10 @@ Ant Server 是一个基于 Java NIO 开发的多线程 HTTP 服务器，支持�
     - [x] GET
     - [x] 文件上传
 - [x] HTTP响应
+    - [x] 200
+    - [ ] 301
+    - [ ] 302
+    - [x] 404
 - [ ] HttpServlet
     - [ ] Cookies
     - [ ] Session
@@ -28,11 +32,10 @@ Ant Server 是一个基于 Java NIO 开发的多线程 HTTP 服务器，支持�
     - [ ] HttpSessionIdListener
     - [ ] HttpSessionListener
 - [x] 静态资源
-- [ ] JSP
 - [ ] 通过注解配置服务器
 - [x] 通过XML配置服务器
 
 ## 即将支持特性
 
-+ WEB应用加载
++ 增强http响应
 

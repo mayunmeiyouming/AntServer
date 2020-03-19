@@ -38,12 +38,16 @@ public class HttpResponse extends HttpResponsePackage {
             setContentLength(file.length());
             statusCode = 200;
         } else {
-            head = "400" + NEWLINE;
+            head = "HTTP/1.1 404 Not Found" + NEWLINE;
             statusCode = 404;
         }
         commitResponseHeader();
-        if (statusCode == 200)
+        if (statusCode == 200) {
             sendData(file);
+        } else if (statusCode == 404) {
+            file = new File("WebContent/404/404.html");
+            sendData(file);
+        }
     }
 
     private void sendData(File file) throws IOException {
@@ -77,20 +81,4 @@ public class HttpResponse extends HttpResponsePackage {
         headerBuffer.put(NEWLINE);
     }
 
-    public void sendError(int i, String msg)
-            throws IOException {
-        System.out.println("not modified");
-        headerBuffer.clear();
-        headerBuffer.put("HTTP/1.1 " + i + " " + msg);
-        headerBuffer.put("Date: " + new Date() + NEWLINE);
-        headerBuffer.put(NEWLINE);
-        headerBuffer.flip();
-        channel.write(encoder.encode(headerBuffer));
-    }
-
-
-    public void close() throws IOException {
-        key.channel().close();
-        key.selector().wakeup();
-    }
 }

@@ -37,7 +37,7 @@ public class HttpRequestParser {
         this.key = key;
     }
 
-    public HttpRequest parser() throws IOException, FileUploadException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    public HttpRequest parser() throws IOException {
         request = new HttpRequest();
         SocketChannel socketChannel = (SocketChannel) key.channel();
         ByteBuffer readBuffer = ByteBuffer.allocate(102400);
@@ -153,7 +153,7 @@ public class HttpRequestParser {
             } catch (UnsupportedEncodingException e) {
 
             }
-            System.out.println("参数: " + key + " " + value);
+            System.out.println("请求参数: " + key + " " + value);
             request.setParameter(key, value);
         }
         return true;
@@ -163,7 +163,7 @@ public class HttpRequestParser {
         int index = line.indexOf(':');
         String title = line.substring(0, index);
         String value = line.substring(index + 2);
-        System.out.println("参数: " + line);
+        System.out.println("HTTP参数: " + line);
         if ("Host".equals(title)) {
             request.setHost(value);
         } else if ("Connection".equals(title)) {
