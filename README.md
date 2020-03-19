@@ -1,17 +1,38 @@
 # Ant Server
 
-这是一个使用java写的web服务器，支持多线程的web服务器，并且能够解析GET请求和POST请求，支持请求附带文件。
+Ant Server 是一个基于 Java NIO 开发的多线程 HTTP 服务器，支持基本的 HTTP/1.1 协议。
 
-目前完成功能：
+## Ant Server 支持特性
 
-+ java nio监听事件
-+ 解析http GET请求
-+ 解析http POST请求
-+ 多线程处理http响应
-+ 支持常见mime类型
-+ 支持多种类型的文件上传(目前还有点小bug)
-+ 支持xml配置
+- [x] 多线程处理
+- [ ] WEB应用加载
+- [x] HTTP请求解析
+    - [x] POST
+    - [x] GET
+    - [x] 文件上传
+- [x] HTTP响应
+- [ ] HttpServlet
+    - [ ] Cookies
+    - [ ] Session
+    - [ ] File upload
+    - [ ] Forward
+    - [ ] Async context
+    - [ ] WebSocket
+- [ ] HttpFilter
+- [ ] EventListener
+    - [ ] ServletContextListener
+    - [ ] ServletContextAttributeListener
+    - [ ] ServletRequestListener
+    - [ ] ServletRequestAttributeListener
+    - [ ] HttpSessionAttributeListener
+    - [ ] HttpSessionIdListener
+    - [ ] HttpSessionListener
+- [x] 静态资源
+- [ ] JSP
+- [ ] 通过注解配置服务器
+- [x] 通过XML配置服务器
 
-即将完成功能：
+## 即将支持特性
 
-+ 修复bug
++ WEB应用加载
+
