@@ -333,7 +333,11 @@ public class HttpRequestParser {
             FileContent fileContent1 = multipartContent.getFile("filehw");
             if (fileContent1 != null) {
                 InputStream inputStream = fileContent1.getInputStream();
+                if (inputStream == null)
+                    return;
                 String line = null;
+                if (fileContent1.getFilename().equals("") || fileContent1.getFilename() == null)
+                    return;
                 File file = new File("WebContent/" + fileContent1.getFilename());
                 OutputStream outputStream = new FileOutputStream(file);
                 byte[] bytes2 = new byte[1024];
