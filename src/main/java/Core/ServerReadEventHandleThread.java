@@ -8,10 +8,13 @@ import org.apache.commons.fileupload.FileUploadException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public class ServerReadEventHandleThread implements Runnable {
@@ -21,6 +24,9 @@ public class ServerReadEventHandleThread implements Runnable {
     //编码器初始化
     private static CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
     private static CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
+
+    private HttpRequest request;
+    private HttpResponse response;
 
     public ServerReadEventHandleThread(ArrayBlockingQueue<SelectionKey> queue) {
         this.queue = queue;
@@ -48,27 +54,49 @@ public class ServerReadEventHandleThread implements Runnable {
                 e.printStackTrace();
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
         }
     }
 
-    private boolean readHandler(SelectionKey key) throws IOException, FileUploadException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    private boolean readHandler(SelectionKey key) throws IOException, FileUploadException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException {
         boolean res = true;
         if (!key.isValid() || !key.isReadable())
             return false;
 
         HttpRequestParser parser = new HttpRequestParser(key);
         //Http请求包
-        HttpRequest requestPackage = parser.parser();
+        request = parser.parser();
 
-        res = response(requestPackage, key);
+        if (request.getResource().equals("") || request.getResource().equals("hw")) {
+            response = new HttpResponse(key);
+
+            Class cl = Class.forName("Webapp.main.java.servlet.ServletTest");
+            Method method = cl.getDeclaredMethod("doGet", HttpRequest.class, HttpResponse.class);
+            if(!method.isAccessible()){
+                method.setAccessible(true);
+            }
+            Class<?>[] cla = method.getParameterTypes();
+            List<Object> listValue = new ArrayList<Object>();
+            //循环参数类型
+            for (int i = 0; i < cla.length; i++) {
+                if (cla[i].getTypeName().equals("Http.HttpRequest"))
+                    listValue.add(request);
+                else if (cla[i].getTypeName().equals("Http.HttpResponse"))
+                    listValue.add(response);
+            }
+            method.invoke(cl.newInstance(), listValue.toArray());
+        } else {
+            res = response(key);
+        }
 
         key.channel().close();
 
         return res;
     }
 
-    private boolean response(HttpRequest request, SelectionKey key) throws IOException {
+    private boolean response(SelectionKey key) throws IOException {
         boolean res = false;
         String method = request.getMethod();
         String resource = request.getResource();
