@@ -1,5 +1,7 @@
 package Core;
 
+import Loader.ServletMap;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -16,14 +18,17 @@ public class NioListen implements Runnable {
     private static HashMap<SocketChannel, ByteBuffer> map = new HashMap<>();
     private ArrayBlockingQueue<SelectionKey> queue;
 
-    public NioListen(Selector selector) {
+    public NioListen(Selector selector, ServletMap map) {
         NioListen.selector = selector;
         int nThreads = Runtime.getRuntime().availableProcessors();
         queue = new ArrayBlockingQueue(256);
         for (int i = 0 ; i < nThreads * 2 ; i ++) {
-            Runnable r = new ServerReadEventHandleThread(queue);
+            RequestDispatcher dispatcher = new RequestDispatcher(map);
+            Runnable r = new ServerReadEventHandleThread(queue, dispatcher);
             new Thread(r).start();
         }
+        System.out.println("启动完成");
+        System.out.println();
     }
 
     //监听器

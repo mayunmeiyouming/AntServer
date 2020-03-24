@@ -1,58 +1,58 @@
 package Loader;
 
-import java.io.ByteArrayOutputStream;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
+
 import java.io.File;
-import java.io.FileInputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
+import java.io.IOException;
+import java.util.List;
 
-public class AntServerLoader extends ClassLoader {
+public class AntServerLoader {
 
-    public AntServerLoader(){}
+    private ServletMap map;
 
-    public AntServerLoader(ClassLoader parent)
-    {
-        super(parent);
+    private String webXmlPath = "WebContent/conf/web.xml";  //web.xml相对地址
+    private String servletDefautlPath = "Webapp.main.java.";//servlet默认路径
+
+    public AntServerLoader() throws JDOMException, IOException, ClassNotFoundException {
+        map = new ServletMap();
+        parser();
     }
 
-    protected Class<?> findClass(String name) throws ClassNotFoundException
-    {
-        File file = new File("./WebContent/main/java/servlet/People.class");
-        try{
-            byte[] bytes = getClassBytes(file);
-            //defineClass方法可以把二进制流字节组成的文件转换为一个java.lang.Class
-            Class<?> c = this.defineClass(name, bytes, 0, bytes.length);
-            return c;
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        return super.findClass(name);
+    public ServletMap getMap() {
+        return map;
     }
 
-    private byte[] getClassBytes(File file) throws Exception
-    {
-        // 这里要读入.class的字节，因此要使用字节流
-        FileInputStream fis = new FileInputStream(file);
-        FileChannel fc = fis.getChannel();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        WritableByteChannel wbc = Channels.newChannel(baos);
-        ByteBuffer by = ByteBuffer.allocate(1024);
+    private void parser() throws JDOMException, IOException, ClassNotFoundException {
 
-        while (true){
-            int i = fc.read(by);
-            if (i == 0 || i == -1)
-                break;
-            by.flip();
-            wbc.write(by);
-            by.clear();
+        // 通过SAXBuilder解析xml
+        SAXBuilder builder = new SAXBuilder();
+
+        File file = new File(webXmlPath);
+        Document doc = builder.build(file);
+        Element root = doc.getRootElement(); // 获取根元素
+
+        List<Element> list = root.getChildren("servlet-mapping");
+        for (Element element: list) {
+            Element e = element.getChild("servlet-name");
+            String servletName = e.getText();
+            e = element.getChild("url-pattern");
+            String url = e.getText();
+            map.setMap(url, servletName);
         }
-        fis.close();
-        return baos.toByteArray();
+
+        list = root.getChildren("servlet");
+        for (Element element: list) {
+            Element e = element.getChild("servlet-name");
+            String servletName = e.getText();
+            e = element.getChild("servlet-class");
+            String text = servletDefautlPath + e.getText();
+            Class cl = Class.forName(text);
+            System.out.println(cl);
+            map.useServletNameSetServletClass(servletName, cl);
+        }
     }
 
 }

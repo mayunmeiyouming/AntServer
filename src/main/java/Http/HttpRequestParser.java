@@ -1,9 +1,6 @@
 package Http;
 
-import org.apache.commons.fileupload.FileUploadException;
-
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -302,16 +299,16 @@ public class HttpRequestParser {
         if (temp.position() != 0) {
             temp.flip();
             if (byteBuffer.capacity() != byteBuffer.limit()) {
-                System.out.println("最后一行");
+                //System.out.println("最后一行");
                 buffer.put(temp);
                 byteBuffer.clear();
             } else {
-                System.out.println("数据下移");
+                //System.out.println("数据下移");
                 byteBuffer.clear();
                 byteBuffer.put(temp);
-                System.out.println("temp的位置: " + temp.position());
-                System.out.println("数据位置: " + byteBuffer.position());
-                System.out.println("数据limit: " + byteBuffer.limit());
+                //System.out.println("temp的位置: " + temp.position());
+                //System.out.println("数据位置: " + byteBuffer.position());
+                //System.out.println("数据limit: " + byteBuffer.limit());
             }
             temp.clear();
         } else {

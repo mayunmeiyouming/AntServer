@@ -1,5 +1,7 @@
 package Core;
 
+import Loader.AntServerLoader;
+import Loader.ServletMap;
 import org.jdom2.Attribute;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -20,7 +22,7 @@ public class WebServer {
     private static int PORT = 80;//默认监听80端口
 
     // 开始服务器 Socket 线程.
-    public WebServer() throws IOException {
+    public WebServer() throws IOException, JDOMException, ClassNotFoundException {
         ServerSocketChannel servSocketChannel;
         try {
             servSocketChannel = ServerSocketChannel.open();
@@ -38,7 +40,10 @@ public class WebServer {
         }
         if (selector == null)
             System.exit(1);//无法开始服务器
-        Runnable runnable = new NioListen(selector);
+        //获取ServletMap
+        AntServerLoader loader = new AntServerLoader();
+        ServletMap map = loader.getMap();
+        Runnable runnable = new NioListen(selector, map);
         new Thread(runnable, "NioListen").start();
     }
 
@@ -56,7 +61,6 @@ public class WebServer {
     private static void usage() {
         System.out.println("This is Ant Server, Welcome to use it.");
         System.out.println("Ant Server 监听 " + PORT + " 端口.");
-        System.out.println();
     }
 
     private static void conf() throws IOException, JDOMException {
@@ -72,12 +76,13 @@ public class WebServer {
 
         Attribute attribute = connector.getAttribute("port");
         PORT = Integer.valueOf(attribute.getValue());
+        builder = null;
     }
 
     /**
      * Starting Ant Server
      */
-    public static void main(String[] args) throws IOException, JDOMException {
+    public static void main(String[] args) throws IOException, JDOMException, ClassNotFoundException {
         conf();
         usage();
         new WebServer();

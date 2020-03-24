@@ -8,13 +8,10 @@ import org.apache.commons.fileupload.FileUploadException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public class ServerReadEventHandleThread implements Runnable {
@@ -27,9 +24,12 @@ public class ServerReadEventHandleThread implements Runnable {
 
     private HttpRequest request;
     private HttpResponse response;
+    private RequestDispatcher dispatcher;
 
-    public ServerReadEventHandleThread(ArrayBlockingQueue<SelectionKey> queue) {
+    public ServerReadEventHandleThread(ArrayBlockingQueue<SelectionKey> queue,
+                                       RequestDispatcher dispatcher) {
         this.queue = queue;
+        this.dispatcher = dispatcher;
     }
 
     @Override
@@ -69,25 +69,10 @@ public class ServerReadEventHandleThread implements Runnable {
         //Http请求包
         request = parser.parser();
 
-        if (request.getResource().equals("") || request.getResource().equals("hw")) {
-            response = new HttpResponse(key);
+        response = new HttpResponse(key);
+        res = dispatcher.dispatch(request.getResource(), request, response);
 
-            Class cl = Class.forName("Webapp.main.java.servlet.ServletTest");
-            Method method = cl.getDeclaredMethod("doGet", HttpRequest.class, HttpResponse.class);
-            if(!method.isAccessible()){
-                method.setAccessible(true);
-            }
-            Class<?>[] cla = method.getParameterTypes();
-            List<Object> listValue = new ArrayList<Object>();
-            //循环参数类型
-            for (int i = 0; i < cla.length; i++) {
-                if (cla[i].getTypeName().equals("Http.HttpRequest"))
-                    listValue.add(request);
-                else if (cla[i].getTypeName().equals("Http.HttpResponse"))
-                    listValue.add(response);
-            }
-            method.invoke(cl.newInstance(), listValue.toArray());
-        } else {
+        if (res == false) {
             res = response(key);
         }
 
@@ -116,7 +101,7 @@ public class ServerReadEventHandleThread implements Runnable {
             contentType = MimeTypes.getContentType(resource.substring(index));
         }
 
-        HttpResponse response = new HttpResponse(key);
+        response = new HttpResponse(key);
         response.setContentType(contentType);
         response.send(filename);
         return res;
