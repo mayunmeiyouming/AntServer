@@ -50,7 +50,6 @@ public class AntServerLoader {
             e = element.getChild("servlet-class");
             String text = servletDefautlPath + e.getText();
             Class cl = Class.forName(text);
-            System.out.println(cl);
             map.useServletNameSetServletClass(servletName, cl);
         }
     }
