@@ -5,14 +5,16 @@ Ant Server 是一个基于 Java NIO 开发的多线程 HTTP 服务器，支持�
 ## Ant Server 支持特性
 
 - [x] 多线程处理
-- [x] HTTP请求解析
+- [x] HTTP请求
     - [x] POST
     - [x] GET
-    - [x] 文件上传
+    - [ ] OPTIONS
 - [x] HTTP响应
     - [x] 200
+    - [ ] 300
     - [ ] 301
-    - [ ] 302
+    - [ ] 401
+    - [ ] 403
     - [x] 404
 - [x] HttpServlet
     - [ ] Cookies
