@@ -31,7 +31,7 @@ public class MimeTypes {
 		mimeMap.put(".jar", "application/java-archive");
 		mimeMap.put(".jpg", "image/jpeg");
 		mimeMap.put(".jpeg", "image/jpeg");
-		mimeMap.put(".js", "text/javascript");
+		mimeMap.put(".js", "application/x-javascript");
 		mimeMap.put(".json", "application/json");
 		mimeMap.put(".jsonld", "application/ld+json");
 		mimeMap.put(".mid", "audio/midi");

@@ -94,7 +94,7 @@ public class ServerReadEventHandleThread implements Runnable {
         String contentType = "";
         int index = -1;
         if (!"".equals(resource))
-            index = resource.indexOf('.');
+            index = resource.lastIndexOf('.');
         if (index == -1)
             contentType = "text/html";
         else {

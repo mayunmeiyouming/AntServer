@@ -54,11 +54,16 @@ public class HttpResponse extends HttpResponsePackage {
         FileInputStream inputStream = new FileInputStream(file);
         FileChannel fileChannel = inputStream.getChannel();
         ByteBuffer data = ByteBuffer.allocate(1024);
-        while (fileChannel.read(data) > 0) {
-            data.flip();
-            while (data.hasRemaining())
-                channel.write(data);
-            data.clear();
+        try {
+            while (fileChannel.read(data) > 0) {
+                data.flip();
+                while (data.hasRemaining())
+                    channel.write(data);
+                data.clear();
+            }
+        } finally {
+            fileChannel.close();
+            inputStream.close();
         }
     }
 
