@@ -17,10 +17,6 @@ public class ServerReadEventHandleThread implements Runnable {
 
     private ArrayBlockingQueue<SelectionKey> queue;
 
-    //编码器初始化
-    private static CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
-    private static CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
-
     private HttpRequest request;
     private HttpResponse response;
     private RequestDispatcher dispatcher;
