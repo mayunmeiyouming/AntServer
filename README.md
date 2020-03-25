@@ -13,6 +13,7 @@ Ant Server 是一个基于 Java NIO 开发的多线程 HTTP 服务器，支持�
     - [x] 200
     - [ ] 300
     - [ ] 301
+    - [x] 302
     - [ ] 401
     - [ ] 403
     - [x] 404
@@ -31,6 +32,7 @@ Ant Server 是一个基于 Java NIO 开发的多线程 HTTP 服务器，支持�
     - [ ] Session
     - [x] File upload
     - [ ] Forward
+    - [x] sendRedirect
     - [ ] Async context
     - [ ] WebSocket
 - [ ] HttpFilter

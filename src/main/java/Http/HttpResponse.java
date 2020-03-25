@@ -10,7 +10,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,15 +33,17 @@ public class HttpResponse extends HttpResponsePackage {
     public void write(String filename) throws IOException {
         File file = new File(filename);
         if (file.exists() && !file.isDirectory()) {
-            head = "HTTP/1.1 200 OK" + NEWLINE;
+            if (statusCode != 302) {
+                head = "HTTP/1.1 200 OK" + NEWLINE;
+                statusCode = 200;
+            }
             setContentLength(file.length());
-            statusCode = 200;
         } else {
             head = "HTTP/1.1 404 Not Found" + NEWLINE;
             statusCode = 404;
         }
         commitResponseHeader();
-        if (statusCode == 200) {
+        if (statusCode == 200 || statusCode == 302) {
             sendData(file);
         } else if (statusCode == 404) {
             file = new File("WebContent/404/404.html");
@@ -84,6 +85,12 @@ public class HttpResponse extends HttpResponsePackage {
         headerBuffer.put(": ");
         headerBuffer.put(value);
         headerBuffer.put(NEWLINE);
+    }
+
+    public void sendRedirect(String url) throws IOException {
+        head = "HTTP/1.1 302 OK" + NEWLINE;
+        statusCode = 302;
+        write(url);
     }
 
 }

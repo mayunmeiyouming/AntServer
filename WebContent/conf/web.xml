@@ -22,4 +22,13 @@
     <url-pattern>hw</url-pattern>
   </servlet-mapping>
 
+  <servlet>
+    <servlet-name>test1</servlet-name>
+    <servlet-class>servlet.ServletTest1</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>test1</servlet-name>
+    <url-pattern>test1</url-pattern>
+  </servlet-mapping>
+
 </web-app>
