@@ -27,7 +27,7 @@ public class ServletTest {
         System.out.println("hello");
 
         // 输出文本
-        response.send("WebContent/index.html");
+        response.write("WebContent/index.html");
     }
 
 }

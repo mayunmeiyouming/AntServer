@@ -31,7 +31,7 @@ public class HttpResponse extends HttpResponsePackage {
         this.channel = (SocketChannel) key.channel();
     }
 
-    public void send(String filename) throws IOException {
+    public void write(String filename) throws IOException {
         File file = new File(filename);
         if (file.exists() && !file.isDirectory()) {
             head = "HTTP/1.1 200 OK" + NEWLINE;

@@ -34,7 +34,7 @@ public class RequestDispatcher {
             }
             Class<?>[] cla = method.getParameterTypes();
             List<Object> listValue = new ArrayList<Object>();
-            //循环参数类型
+            //循环获取函数参数
             for (int i = 0; i < cla.length; i++) {
                 if (cla[i].getTypeName().equals("Http.HttpRequest"))
                     listValue.add(request);
@@ -42,7 +42,7 @@ public class RequestDispatcher {
                     listValue.add(response);
             }
             Object o = classMap.get(url);
-            if (o == null) {
+            if (o == null) {   //判断classMap是否有实例对象
                 //System.out.println(Thread.currentThread().getName() + "创建对象");
                 o = cl.newInstance();
                 classMap.put(url, o);

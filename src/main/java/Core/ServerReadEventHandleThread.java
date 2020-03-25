@@ -102,7 +102,7 @@ public class ServerReadEventHandleThread implements Runnable {
 
         response = new HttpResponse(key);
         response.setContentType(contentType);
-        response.send(filename);
+        response.write(filename);
         return res;
     }
 
