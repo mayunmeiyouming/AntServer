@@ -4,7 +4,6 @@ import Http.HttpRequest;
 import Http.HttpRequestParser;
 import Http.HttpResponse;
 import Http.MimeTypes;
-import org.apache.commons.fileupload.FileUploadException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -44,7 +43,7 @@ public class ServerReadEventHandleThread implements Runnable {
                     }
                 }
 
-            } catch (InterruptedException | IOException | FileUploadException e) {
+            } catch (InterruptedException | IOException e) {
                 e.printStackTrace();
             } catch (InstantiationException e) {
                 e.printStackTrace();
@@ -60,7 +59,7 @@ public class ServerReadEventHandleThread implements Runnable {
         }
     }
 
-    private boolean readHandler(SelectionKey key) throws IOException, FileUploadException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException {
+    private boolean readHandler(SelectionKey key) throws IOException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException {
         boolean res = true;
         if (!key.isValid() || !key.isReadable())
             return false;

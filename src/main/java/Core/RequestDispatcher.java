@@ -21,7 +21,6 @@ public class RequestDispatcher {
     public boolean dispatch(String url, HttpRequest request, HttpResponse response) throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
         Servlet servlet = map.getServlet(url);
         if (servlet != null) {
-            System.out.println("url: " + servlet.getURLPattern());
             Class cl = servlet.getServletClass();
             if (cl == null)
                 return false;

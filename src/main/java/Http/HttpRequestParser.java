@@ -195,6 +195,8 @@ public class HttpRequestParser {
             request.setOrigin(value);
         } else if ("Content-Type".equals(title)) {
             request.setContentType(value);
+        } else if ("X-Requested-With".equals(title)) {
+            request.setXRequestedWith(value);
         } else {
             System.out.println(title + "参数未被支持");
         }

@@ -26,10 +26,19 @@ public class HttpRequest {
     private String ContentLength;
     private String Origin;
     private String ContentType;
+    private String XRequestedWith;
 
     private MultipartContent multipartContent;
 
     private InputStream inputStream;
+
+    public String getXRequestedWith() {
+        return XRequestedWith;
+    }
+
+    public void setXRequestedWith(String XRequestedWith) {
+        this.XRequestedWith = XRequestedWith;
+    }
 
     public InputStream getInputStream() {
         return inputStream;
@@ -47,7 +56,10 @@ public class HttpRequest {
         if (contentType == null) {
             return false;
         }
-        return contentType.toLowerCase(Locale.ENGLISH).startsWith("multipart/");
+
+        boolean res = false;
+        res = contentType.toLowerCase(Locale.ENGLISH).startsWith("multipart/");
+        return res;
     }
 
     public MultipartContent getMultipartContent() {
