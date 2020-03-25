@@ -3,8 +3,8 @@ package Core;
 import Http.HttpRequest;
 import Http.HttpResponse;
 import Loader.HttpServlet;
-import Loader.Servlet;
-import Loader.ServletMap;
+import Loader.ServletClass;
+import Loader.ServletClassMap;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -14,16 +14,16 @@ import java.util.List;
 
 public class RequestDispatcher {
 
-    private ServletMap map;
+    private ServletClassMap map;
     private HashMap<String, HttpServlet> classMap;
 
-    public RequestDispatcher(ServletMap map) {
+    public RequestDispatcher(ServletClassMap map) {
         this.map = map;
         classMap = new HashMap<>();
     }
 
     public boolean dispatch(String url, HttpRequest request, HttpResponse response) throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
-        Servlet servlet = map.getServlet(url);
+        ServletClass servlet = map.getServlet(url);
         if (servlet != null) {
             Class cl = servlet.getServletClass();
             if (cl == null)

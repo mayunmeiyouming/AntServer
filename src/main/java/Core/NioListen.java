@@ -1,6 +1,6 @@
 package Core;
 
-import Loader.ServletMap;
+import Loader.ServletClassMap;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -18,7 +18,7 @@ public class NioListen implements Runnable {
     private static HashMap<SocketChannel, ByteBuffer> map = new HashMap<>();
     private ArrayBlockingQueue<SelectionKey> queue;
 
-    public NioListen(Selector selector, ServletMap map) {
+    public NioListen(Selector selector, ServletClassMap map) {
         NioListen.selector = selector;
         int nThreads = Runtime.getRuntime().availableProcessors();
         queue = new ArrayBlockingQueue(256);

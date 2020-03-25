@@ -11,17 +11,17 @@ import java.util.List;
 
 public class AntServerLoader {
 
-    private ServletMap map;
+    private ServletClassMap map;
 
     private String webXmlPath = "WebContent/conf/web.xml";  //web.xml相对地址
     private String servletDefautlPath = "Webapp.main.java.";//servlet默认路径
 
     public AntServerLoader() throws JDOMException, IOException, ClassNotFoundException {
-        map = new ServletMap();
+        map = new ServletClassMap();
         parser();
     }
 
-    public ServletMap getMap() {
+    public ServletClassMap getMap() {
         return map;
     }
 

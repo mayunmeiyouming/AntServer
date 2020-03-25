@@ -1,14 +1,14 @@
 package Loader;
 
-public class Servlet {
+public class ServletClass {
     private String URLPattern;
     private String ServletName;
     private Class ServletClass;
 
-    public Servlet() {
+    public ServletClass() {
     }
 
-    public Servlet(String URLPattern, String servletName) {
+    public ServletClass(String URLPattern, String servletName) {
         this.URLPattern = URLPattern;
         ServletName = servletName;
     }

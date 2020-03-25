@@ -1,7 +1,7 @@
 package Core;
 
 import Loader.AntServerLoader;
-import Loader.ServletMap;
+import Loader.ServletClassMap;
 import org.jdom2.Attribute;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -42,7 +42,7 @@ public class WebServer {
             System.exit(1);//无法开始服务器
         //获取ServletMap
         AntServerLoader loader = new AntServerLoader();
-        ServletMap map = loader.getMap();
+        ServletClassMap map = loader.getMap();
         Runnable runnable = new NioListen(selector, map);
         new Thread(runnable, "NioListen").start();
     }
