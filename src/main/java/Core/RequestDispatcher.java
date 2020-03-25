@@ -8,14 +8,17 @@ import Loader.ServletMap;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class RequestDispatcher {
 
     private ServletMap map;
+    private HashMap<String,Object> classMap;
 
     public RequestDispatcher(ServletMap map) {
         this.map = map;
+        classMap = new HashMap<>();
     }
 
     public boolean dispatch(String url, HttpRequest request, HttpResponse response) throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
@@ -38,7 +41,13 @@ public class RequestDispatcher {
                 else if (cla[i].getTypeName().equals("Http.HttpResponse"))
                     listValue.add(response);
             }
-            method.invoke(cl.newInstance(), listValue.toArray());
+            Object o = classMap.get(url);
+            if (o == null) {
+                //System.out.println(Thread.currentThread().getName() + "创建对象");
+                o = cl.newInstance();
+                classMap.put(url, o);
+            }
+            method.invoke(o, listValue.toArray());
             return true;
         }
         return false;
