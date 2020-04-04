@@ -23,7 +23,7 @@ public class NioListen implements Runnable {
         int nThreads = Runtime.getRuntime().availableProcessors();
         queue = new ArrayBlockingQueue(256);
         for (int i = 0 ; i < nThreads * 2 ; i ++) {
-            RequestDispatcher dispatcher = new RequestDispatcher(map);
+            HttpDispatcher dispatcher = new HttpDispatcher(map);
             Runnable r = new ServerReadEventHandleThread(queue, dispatcher);
             new Thread(r).start();
         }

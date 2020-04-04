@@ -60,6 +60,14 @@ public class HttpResponsePackage {
         map.put("Server", server);
     }
 
+    public void setStatus(int statusCode) {
+        this.statusCode = statusCode;
+    }
+
+    public void setLocation(String location) {
+        map.put("Location", location);
+    }
+
     public Set<Map.Entry<String, String>> getEntries() {
         return map.entrySet();
     }

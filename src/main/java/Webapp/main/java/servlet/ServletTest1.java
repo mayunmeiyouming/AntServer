@@ -11,8 +11,7 @@ public class ServletTest1 extends HttpServlet {
     @Override
     protected void doPost(HttpRequest request, HttpResponse response) throws IOException {
         response.setContentType("text/html");
-        response.sendRedirect("WebContent/test2.html");
-
+        response.sendRedirect("test2.html");
     }
 
     @Override
@@ -22,6 +21,6 @@ public class ServletTest1 extends HttpServlet {
         //System.out.println("hello");
 
         // 输出文本
-        response.sendRedirect("WebContent/test2.html");
+        response.sendRedirect("test2.html");
     }
 }

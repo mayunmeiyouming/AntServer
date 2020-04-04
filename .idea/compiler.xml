@@ -9,5 +9,8 @@
         <module name="WebServer" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="ServletTest" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>

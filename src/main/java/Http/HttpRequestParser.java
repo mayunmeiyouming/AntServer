@@ -77,7 +77,7 @@ public class HttpRequestParser {
             if ("".equals(line)) {  //请求头解析完成
                 System.out.println("用户请求的资源是: " + request.getResource());
                 System.out.println("请求的类型是: " + request.getMethod());
-                System.out.println("ContentType: " + request.getContentType());
+                //System.out.println("ContentType: " + request.getContentType());
                 System.out.println("请求头解析完成");
                 headEnd = true;
                 temp.clear();
@@ -160,7 +160,7 @@ public class HttpRequestParser {
         int index = line.indexOf(':');
         String title = line.substring(0, index);
         String value = line.substring(index + 2);
-        System.out.println("HTTP参数: " + line);
+        //System.out.println("HTTP参数: " + line);
         if ("Host".equals(title)) {
             request.setHost(value);
         } else if ("Connection".equals(title)) {
@@ -265,11 +265,11 @@ public class HttpRequestParser {
                             }
                         }
                     }
-                    System.out.println(line);
+                    //System.out.println(line);
                 } else if (line.contains("Content-Type")) {
                     String[] strs = line.split(": ");
                     fileContent.setContentType(strs[1]);
-                    System.out.println(line);
+                    //System.out.println(line);
                 }
 
             } else {  //参数值
@@ -326,7 +326,7 @@ public class HttpRequestParser {
      */
     private void test() throws IOException {
         System.out.println("test begin");
-        System.out.println(request.getMultipartContent());
+        //System.out.println(request.getMultipartContent());
         MultipartContent multipartContent = request.getMultipartContent();
         if (multipartContent != null) {
             FileContent fileContent1 = multipartContent.getFile("filehw");

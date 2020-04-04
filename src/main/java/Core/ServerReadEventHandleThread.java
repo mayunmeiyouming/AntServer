@@ -8,9 +8,6 @@ import Http.MimeTypes;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.SelectionKey;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public class ServerReadEventHandleThread implements Runnable {
@@ -19,10 +16,10 @@ public class ServerReadEventHandleThread implements Runnable {
 
     private HttpRequest request;
     private HttpResponse response;
-    private RequestDispatcher dispatcher;
+    private HttpDispatcher dispatcher;
 
     public ServerReadEventHandleThread(ArrayBlockingQueue<SelectionKey> queue,
-                                       RequestDispatcher dispatcher) {
+                                       HttpDispatcher dispatcher) {
         this.queue = queue;
         this.dispatcher = dispatcher;
     }
@@ -65,9 +62,11 @@ public class ServerReadEventHandleThread implements Runnable {
         request = parser.parser();
 
         response = new HttpResponse(key);
+
+        // 只对有隐写url的请求进行分发
         res = dispatcher.dispatch(request.getResource(), request, response);
 
-        if (res == false) {
+        if (res == false) {   // 直接访问页面
             res = response(key);
         }
 
