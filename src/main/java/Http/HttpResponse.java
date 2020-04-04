@@ -31,7 +31,6 @@ public class HttpResponse extends HttpResponsePackage {
 
     public void write(String filename) throws IOException {
         File file = new File(filename);
-        System.out.println("文件是否存在：" + file.exists());
         if (file.exists() && !file.isDirectory()) {
             setStatus(200);
             setContentLength(file.length());
