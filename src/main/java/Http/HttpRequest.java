@@ -28,6 +28,8 @@ public class HttpRequest {
     private String ContentType;
     private String XRequestedWith;
 
+    private RequestDispatcher dispatcher;
+
     private MultipartContent multipartContent;
 
     private InputStream inputStream;
@@ -240,5 +242,12 @@ public class HttpRequest {
 
     public void setUpgradeInsecureRequests(String upgradeInsecureRequests) {
         UpgradeInsecureRequests = upgradeInsecureRequests;
+    }
+
+    public RequestDispatcher getRequestDispatcher(String path) {
+        if (dispatcher == null) {
+            dispatcher = new RequestDispatcherImpl(path);
+        }
+        return dispatcher;
     }
 }

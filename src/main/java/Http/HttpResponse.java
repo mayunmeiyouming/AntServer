@@ -20,8 +20,6 @@ public class HttpResponse extends HttpResponsePackage {
 
     //http 响应字段
     private static String NEWLINE = "\r\n";
-    private String head = "HTTP/1.1 200 OK" + NEWLINE;
-    private boolean isSetHead = false;
 
     private CharBuffer headerBuffer = CharBuffer.allocate(1024);
     private static CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
@@ -32,28 +30,20 @@ public class HttpResponse extends HttpResponsePackage {
     }
 
     public void write(String filename) throws IOException {
-        try {
-            File file = new File(filename);
-            if (file.exists() && !file.isDirectory()) {
-                if (!isSetHead) {
-                    head = "HTTP/1.1 200 OK" + NEWLINE;
-                    statusCode = 200;
-                    isSetHead = true;
-                }
-                setContentLength(file.length());
-            } else {
-                head = "HTTP/1.1 404 Not Found" + NEWLINE;
-                statusCode = 404;
-            }
-            commitResponseHeader();
-            if (statusCode == 200 || statusCode == 302) {
-                sendData(file);
-            } else if (statusCode == 404) {
-                file = new File("WebContent/404/404.html");
-                sendData(file);
-            }
-        } finally {
-            isSetHead = false;
+        File file = new File(filename);
+        System.out.println("文件是否存在：" + file.exists());
+        if (file.exists() && !file.isDirectory()) {
+            setStatus(200);
+            setContentLength(file.length());
+        } else {
+            setStatus(404);
+        }
+        commitResponseHeader();
+        if (statusCode == 200 || statusCode == 302) {
+            sendData(file);
+        } else if (statusCode == 404) {
+            file = new File("WebContent/404/404.html");
+            sendData(file);
         }
     }
 
@@ -75,19 +65,15 @@ public class HttpResponse extends HttpResponsePackage {
     }
 
     public void commitResponseHeader() throws IOException {
-        try {
-            headerBuffer.clear();
-            headerBuffer.put(head);
-            Set<Map.Entry<String, String>> entries = getEntries();
-            for (Map.Entry<String, String> entry : entries) {
-                appendHeaderValue(entry.getKey(), entry.getValue());
-            }
-            headerBuffer.put(NEWLINE);
-            headerBuffer.flip();
-            channel.write(encoder.encode(headerBuffer));
-        } finally {
-            isSetHead = false;
+        headerBuffer.clear();
+        headerBuffer.put(getHead());
+        Set<Map.Entry<String, String>> entries = getEntries();
+        for (Map.Entry<String, String> entry : entries) {
+            appendHeaderValue(entry.getKey(), entry.getValue());
         }
+        headerBuffer.put(NEWLINE);
+        headerBuffer.flip();
+        channel.write(encoder.encode(headerBuffer));
     }
 
     private void appendHeaderValue(String name, String value) {
@@ -98,9 +84,7 @@ public class HttpResponse extends HttpResponsePackage {
     }
 
     public void sendRedirect(String url) throws IOException {
-        head = "HTTP/1.1 302" + NEWLINE;
-        statusCode = 302;
-        isSetHead = true;
+        setStatus(302);
         setLocation(url);
         commitResponseHeader();
     }

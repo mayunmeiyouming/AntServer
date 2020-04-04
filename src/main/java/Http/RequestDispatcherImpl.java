@@ -1,5 +1,7 @@
 package Http;
 
+import java.io.IOException;
+
 public class RequestDispatcherImpl implements RequestDispatcher {
 
     private String path;
@@ -9,8 +11,9 @@ public class RequestDispatcherImpl implements RequestDispatcher {
     }
 
     @Override
-    public void forward(HttpRequest request, HttpResponse response) {
-
+    public void forward(HttpRequest request, HttpResponse response) throws IOException {
+        String u = "WebContent/" + path;
+        response.write(u);
     }
 
     @Override

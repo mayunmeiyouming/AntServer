@@ -18,9 +18,9 @@ public class ServletTest1 extends HttpServlet {
     protected void doGet(HttpRequest request, HttpResponse response) throws IOException {
         // 设置:响应内容类型
         response.setContentType("text/html");
-        //System.out.println("hello");
 
         // 输出文本
-        response.sendRedirect("test2.html");
+        //response.sendRedirect("test2.html");
+        request.getRequestDispatcher("test2.html").forward(request, response);
     }
 }

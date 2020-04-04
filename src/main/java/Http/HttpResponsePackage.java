@@ -6,6 +6,8 @@ public class HttpResponsePackage {
 
     private HashMap<String,String> map = new HashMap<>();
     public int statusCode;
+    private static String NEWLINE = "\r\n";
+    private String head = "HTTP/1.1 200 OK" + NEWLINE;
 
     public HttpResponsePackage() {
         map.put("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -17,11 +19,11 @@ public class HttpResponsePackage {
     }
 
     public String getHead() {
-        return map.get("head");
+        return head;
     }
 
     public void setHead(String head) {
-        map.put("head", head);
+        this.head = head;
     }
 
     public void setContentLength(long contentLength) {
@@ -62,6 +64,13 @@ public class HttpResponsePackage {
 
     public void setStatus(int statusCode) {
         this.statusCode = statusCode;
+        if (statusCode == 200)
+            setHead("HTTP/1.1 200 OK" + NEWLINE);
+        else if (statusCode == 302) {
+            setHead("HTTP/1.1 302" + NEWLINE);
+        } else if (statusCode == 404) {
+            setHead("HTTP/1.1 404 Not Found" + NEWLINE);
+        }
     }
 
     public void setLocation(String location) {
