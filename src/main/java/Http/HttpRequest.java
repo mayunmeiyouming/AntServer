@@ -1,7 +1,9 @@
 package Http;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 public class HttpRequest {
@@ -27,12 +29,31 @@ public class HttpRequest {
     private String Origin;
     private String ContentType;
     private String XRequestedWith;
+    private List<Cookie> cookies;
 
     private RequestDispatcher dispatcher;
 
     private MultipartContent multipartContent;
 
     private InputStream inputStream;
+
+    public Cookie[] getCookies() {
+        if (cookies == null || cookies.isEmpty())
+            return null;
+        Cookie[] cookie = new Cookie[0];
+        return cookies.toArray(cookie);
+    }
+
+    public void setCookies(Cookie cookie) {
+        if (cookie == null)
+            return;
+        if (cookies == null)
+            cookies = new ArrayList<>();
+        String name = cookie.getName();
+        String value = cookie.getValue();
+        if (!"".equals(name) && name != null && !"".equals(value) && value != null)
+            cookies.add(cookie);
+    }
 
     public String getXRequestedWith() {
         return XRequestedWith;

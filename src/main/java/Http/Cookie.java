@@ -1,9 +1,7 @@
 package Http;
 
 import java.io.Serializable;
-import java.text.MessageFormat;
 import java.util.Locale;
-import java.util.ResourceBundle;
 
 public class Cookie implements Cloneable, Serializable {
 
@@ -11,11 +9,6 @@ public class Cookie implements Cloneable, Serializable {
 
     private static final String TSPECIALS;
 
-    private static final String LSTRING_FILE =
-            "javax.servlet.http.LocalStrings";
-
-    private static ResourceBundle lStrings =
-            ResourceBundle.getBundle(LSTRING_FILE);
 
     static {
         if (Boolean.valueOf(System.getProperty("org.glassfish.web.rfc2109_cookie_names_enforced", "true"))) {
@@ -44,6 +37,26 @@ public class Cookie implements Cloneable, Serializable {
     private boolean secure;    // ;Secure ... e.g. use SSL
     private int version = 0;    // ;Version=1 ... means RFC 2109++ style
     private boolean isHttpOnly = false;
+    private String sameSite;
+
+    public String getSameSite() {
+        return sameSite;
+    }
+
+    public void setSameSite(String sameSite) {
+        if (sameSite != null && !"".equals(sameSite)) {
+            if (sameSite.equals("None") || sameSite.equals("Strict") || sameSite.equals("Lax"))
+                this.sameSite = sameSite;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Cookie{" +
+                "name='" + name + '\'' +
+                ", value='" + value + '\'' +
+                '}';
+    }
 
     /**
      * Constructs a cookie with the specified name and value.
@@ -74,27 +87,6 @@ public class Cookie implements Cloneable, Serializable {
      * @see #setVersion
      */
     public Cookie(String name, String value) {
-        if (name == null || name.length() == 0) {
-            throw new IllegalArgumentException(
-                    lStrings.getString("err.cookie_name_blank"));
-        }
-        if (!isToken(name) ||
-                name.equalsIgnoreCase("Comment") || // rfc2019
-                name.equalsIgnoreCase("Discard") || // 2019++
-                name.equalsIgnoreCase("Domain") ||
-                name.equalsIgnoreCase("Expires") || // (old cookies)
-                name.equalsIgnoreCase("Max-Age") || // rfc2019
-                name.equalsIgnoreCase("Path") ||
-                name.equalsIgnoreCase("Secure") ||
-                name.equalsIgnoreCase("Version") ||
-                name.startsWith("$")) {
-            String errMsg = lStrings.getString("err.cookie_name_is_token");
-            Object[] errArgs = new Object[1];
-            errArgs[0] = name;
-            errMsg = MessageFormat.format(errMsg, errArgs);
-            throw new IllegalArgumentException(errMsg);
-        }
-
         this.name = name;
         this.value = value;
     }
@@ -323,27 +315,6 @@ public class Cookie implements Cloneable, Serializable {
      */
     public void setVersion(int v) {
         version = v;
-    }
-
-    /*
-     * Tests a string and returns true if the string counts as a
-     * reserved token in the Java language.
-     *
-     * @param value the <code>String</code> to be tested
-     *
-     * @return <code>true</code> if the <code>String</code> is a reserved
-     * token; <code>false</code> otherwise
-     */
-    private boolean isToken(String value) {
-        int len = value.length();
-        for (int i = 0; i < len; i++) {
-            char c = value.charAt(i);
-            if (c < 0x20 || c >= 0x7f || TSPECIALS.indexOf(c) != -1) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**

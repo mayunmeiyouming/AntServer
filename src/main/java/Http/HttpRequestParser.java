@@ -197,10 +197,21 @@ public class HttpRequestParser {
             request.setContentType(value);
         } else if ("X-Requested-With".equals(title)) {
             request.setXRequestedWith(value);
+        } else if ("Cookie".equals(title)) {
+            parserCookie(value);
         } else {
             System.out.println(title + "参数未被支持");
         }
         return true;
+    }
+
+    private void parserCookie(String str) {
+        String[] value = str.split("; ");
+        for (String s : value) {
+            String[] m = s.split("=");
+            Cookie cookie = new Cookie(m[0], m[1]);
+            request.setCookies(cookie);
+        }
     }
 
     private void parserContent(byte[] b, BufferedReader in, int limit) throws IOException {

@@ -4,10 +4,12 @@ import java.util.*;
 
 public class HttpResponsePackage {
 
-    private HashMap<String,String> map = new HashMap<>();
+    private HashMap<String, String> map = new HashMap<>();
     public int statusCode;
     private static String NEWLINE = "\r\n";
     private String head = "HTTP/1.1 200 OK" + NEWLINE;
+
+    private List<Cookie> cookies;
 
     public HttpResponsePackage() {
         map.put("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -16,6 +18,24 @@ public class HttpResponsePackage {
         map.put("Date", new Date().toString());
         map.put("Connection", "Keep-Alive");
         map.put("Server", "Ant Server 0.1");
+    }
+
+    public Cookie[] getCookies() {
+        if (cookies == null || cookies.isEmpty())
+            return null;
+        Cookie[] c = new Cookie[0];
+        return cookies.toArray(c);
+    }
+
+    public void setCookies(Cookie cookie) {
+        if (cookie == null)
+            return;
+        if (cookies == null)
+            cookies = new ArrayList<>();
+        String name = cookie.getName();
+        String value = cookie.getValue();
+        if (!"".equals(name) && name != null && !"".equals(value) && value != null)
+            cookies.add(cookie);
     }
 
     public String getHead() {
@@ -27,7 +47,7 @@ public class HttpResponsePackage {
     }
 
     public void setContentLength(long contentLength) {
-        map.put("Content-Length",contentLength + "");
+        map.put("Content-Length", contentLength + "");
     }
 
     public void setLastModified(long lastModified) {

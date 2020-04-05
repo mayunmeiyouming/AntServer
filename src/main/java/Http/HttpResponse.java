@@ -10,6 +10,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
@@ -65,11 +66,13 @@ public class HttpResponse extends HttpResponsePackage {
 
     public void commitResponseHeader() throws IOException {
         headerBuffer.clear();
-        headerBuffer.put(getHead());
+        String head = getHead();
+        headerBuffer.put(head);
         Set<Map.Entry<String, String>> entries = getEntries();
         for (Map.Entry<String, String> entry : entries) {
             appendHeaderValue(entry.getKey(), entry.getValue());
         }
+        appendCookie();
         headerBuffer.put(NEWLINE);
         headerBuffer.flip();
         channel.write(encoder.encode(headerBuffer));
@@ -80,6 +83,37 @@ public class HttpResponse extends HttpResponsePackage {
         headerBuffer.put(": ");
         headerBuffer.put(value);
         headerBuffer.put(NEWLINE);
+    }
+
+    private void appendCookie() {
+        Cookie[] cookies = getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                String value = cookie.getName() + "=" + cookie.getValue();
+                int timeout = cookie.getMaxAge();
+                if (timeout > 0) {
+                    value += "; " + "Max-Age=" + timeout + "; ";
+                    Date now = new Date();
+                    long time = timeout * 1000;//秒
+                    Date afterDate = new Date(now.getTime() + time);
+                    value += "Expires=" + afterDate.toString();
+                }
+                String domain = cookie.getDomain();
+                if (domain != null && !"".equals(domain))
+                    value += "; " + "Domain=" + domain;
+                String path = cookie.getPath();
+                if (path != null && !"".equals(path))
+                    value += "; " + "Path=" + path;
+                String sameSite = cookie.getSameSite();
+                if (sameSite != null && !"".equals(sameSite))
+                    value += "; " + "SameSite=" + sameSite;
+                if (cookie.getSecure())
+                    value += "; " + "Secure";
+                if (cookie.isHttpOnly())
+                    value += "; " + "HttpOnly";
+                appendHeaderValue("Set-Cookie", value);
+            }
+        }
     }
 
     public void sendRedirect(String url) throws IOException {
