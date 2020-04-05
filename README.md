@@ -17,7 +17,7 @@ Ant Server 是一个基于 Java NIO 开发的多线程 HTTP 服务器，支持�
     - [ ] 401
     - [ ] 403
     - [x] 404
-- [ ] Cookies
+- [x] Cookies
 - [ ] Session
 - [ ] HTTP访问控制（CORS）
 - [ ] HTTP 身份验证
@@ -28,7 +28,7 @@ Ant Server 是一个基于 Java NIO 开发的多线程 HTTP 服务器，支持�
 ### 应用开发
 
 - [x] HttpServlet
-    - [ ] Cookies
+    - [x] Cookies
     - [ ] Session
     - [x] File upload
     - [x] Forward
