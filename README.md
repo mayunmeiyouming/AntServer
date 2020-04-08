@@ -47,8 +47,9 @@ Ant Server 是一个基于 Java NIO 开发的多线程 HTTP 服务器，支持�
 
 ## 即将支持特性（0.20）
 
-+ 支持json格式传输
++ 服务端响应包支持多格式传输
 + 支持cookie，session
 + 支持filter
++ 修复多线程并发问题
 + 为代码添加比较详细的注释
 

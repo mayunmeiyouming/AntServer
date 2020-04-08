@@ -21,7 +21,7 @@ public class NioListen implements Runnable {
     public NioListen(Selector selector, ServletClassMap map) {
         NioListen.selector = selector;
         int nThreads = Runtime.getRuntime().availableProcessors();
-        queue = new ArrayBlockingQueue(256);
+        queue = new ArrayBlockingQueue(10240);
         for (int i = 0 ; i < nThreads * 2 ; i ++) {
             HttpDispatcher dispatcher = new HttpDispatcher(map);
             Runnable r = new ServerReadEventHandleThread(queue, dispatcher);

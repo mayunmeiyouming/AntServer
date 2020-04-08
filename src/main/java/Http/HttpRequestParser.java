@@ -49,10 +49,12 @@ public class HttpRequestParser {
                 temp.put(b);
                 if (b == 10) {
                     handleStream(temp);
+                    temp.clear();
                 }
             }
             if (temp.position() != 0) {
                 handleStream(temp);
+                temp.clear();
             }
         }
         request.setMultipartContent(content);
@@ -129,8 +131,6 @@ public class HttpRequestParser {
             parserParameter(line);
             System.out.println("完成解析post");
         }
-
-        temp.clear();
     }
 
     private boolean parserParameter(String line) {
@@ -336,7 +336,7 @@ public class HttpRequestParser {
      * 测试http请求解析
      */
     private void test() throws IOException {
-        System.out.println("test begin");
+        //System.out.println("test begin");
         //System.out.println(request.getMultipartContent());
         MultipartContent multipartContent = request.getMultipartContent();
         if (multipartContent != null) {
@@ -359,6 +359,6 @@ public class HttpRequestParser {
                 //inputStream.close();
             }
         }
-        System.out.println("test end");
+        //System.out.println("test end");
     }
 }
